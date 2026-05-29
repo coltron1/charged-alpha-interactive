@@ -1,0 +1,2523 @@
+import { readFileSync, writeFileSync } from "node:fs";
+
+const eventsPath = "src/games/headline-market/content/events.ts";
+const outputPath = "src/games/headline-market/content/monthlyExpansion.ts";
+const periodEndDate = "2007-10-26";
+
+const supplementalMonthlyHeadlines = [
+  {
+    date: "1988-02-13",
+    era: "Calgary Games",
+    headline: "Calgary opens Winter Olympics as the Cold War still shadows the medal table",
+    deck: "A record field gathers in Alberta for sixteen days of ice, speed, television, and national pride.",
+    dateline: "CALGARY",
+    article:
+      "The XV Olympic Winter Games opened in Calgary with more than 1,400 athletes from 57 nations, making it one of the largest winter gatherings yet. The page gives Jonah a different kind of future shock: not war or panic, but a world briefly organized around flags, snow, broadcast rights, and the hope that competition can stay friendly.",
+    facts: [
+      "The Calgary Games ran from February 13 to February 28, 1988.",
+      "The Soviet Union led the medal table, while East Germany also delivered a dominant winter performance.",
+      "The Jamaican bobsled team became one of the enduring popular stories of the Games.",
+    ],
+  },
+  {
+    date: "1988-03-16",
+    era: "Chemical Horror",
+    headline: "Poison gas attack at Halabja shocks the world",
+    deck: "Reports from northern Iraq describe civilians killed by chemical weapons during the Iran-Iraq War.",
+    dateline: "HALABJA, IRAQ",
+    article:
+      "News from the Kurdish city of Halabja described one of the worst chemical attacks against civilians in modern history. Thousands were reported dead after Iraqi forces used poison gas near the end of the Iran-Iraq War, turning a remote battlefield into a front-page warning about weapons the world had promised to control.",
+    facts: [
+      "The attack occurred during the closing phase of the Iran-Iraq War.",
+      "Casualty estimates commonly describe thousands killed and many more injured.",
+      "The event became a lasting symbol in debates over chemical weapons and war crimes.",
+    ],
+    major: true,
+  },
+  {
+    date: "1988-04-14",
+    era: "Afghan Accord",
+    headline: "Geneva Accords set timetable for Soviet withdrawal from Afghanistan",
+    deck: "Diplomats sign an agreement meant to end nearly a decade of Soviet military involvement.",
+    dateline: "GENEVA",
+    article:
+      "The Geneva Accords created a formal path for Soviet troops to leave Afghanistan after a grinding conflict that had drawn in regional powers, refugees, and Cold War rivals. For Jonah, the clipping reads like a hinge: history does not stop at the signing table, but sometimes the table changes the direction of the next decade.",
+    facts: [
+      "The agreements were signed by Afghanistan, Pakistan, the Soviet Union, and the United States as guarantor.",
+      "The withdrawal schedule called for Soviet forces to leave Afghanistan within months.",
+      "The war's aftermath would continue to shape Afghanistan and global security for years.",
+    ],
+  },
+  {
+    date: "1988-05-15",
+    era: "Soviet Retreat",
+    headline: "First Soviet troops begin leaving Afghanistan",
+    deck: "Columns move north as Moscow starts the withdrawal promised in Geneva.",
+    dateline: "AFGHAN-SOVIET BORDER",
+    article:
+      "Soviet units began withdrawing from Afghanistan, a visible sign that a costly intervention was finally winding down. The front page pairs movement with uncertainty: armored vehicles can cross a border in a day, but refugees, factional fighting, and wounded economies do not disappear on the same schedule.",
+    facts: [
+      "The withdrawal began after the April 1988 Geneva Accords.",
+      "The Soviet intervention in Afghanistan had started in December 1979.",
+      "The final Soviet troops would leave in February 1989.",
+    ],
+  },
+  {
+    date: "1988-06-23",
+    era: "Climate Warning",
+    headline: "NASA scientist tells Senate global warming has begun",
+    deck: "James Hansen's testimony pushes climate change from scientific journals onto the national front page.",
+    dateline: "WASHINGTON",
+    article:
+      "NASA scientist James Hansen told a Senate committee that human-caused global warming was already detectable, turning a hot Washington day into a climate landmark. The clipping gives Jonah a headline that is not a sudden explosion but a slow fuse, the kind of event markets and families can ignore until the cost becomes visible.",
+    facts: [
+      "Hansen testified before the U.S. Senate Energy and Natural Resources Committee.",
+      "The hearing helped move climate change into mainstream public debate.",
+      "The issue would become a long-running policy, energy, and insurance question.",
+    ],
+  },
+  {
+    date: "1988-08-20",
+    era: "Gulf Ceasefire",
+    headline: "Iran-Iraq War ceasefire takes hold after eight brutal years",
+    deck: "United Nations Resolution 598 brings a halt to one of the bloodiest conflicts of the late twentieth century.",
+    dateline: "UNITED NATIONS",
+    article:
+      "A ceasefire between Iran and Iraq took effect after eight years of trench warfare, missile attacks, oil shocks, and staggering casualties. The paper feels relieved but not triumphant; peace is announced in a headline, while damage to families, borders, and budgets remains buried deep in the article.",
+    facts: [
+      "The Iran-Iraq War began in September 1980.",
+      "The ceasefire was tied to U.N. Security Council Resolution 598.",
+      "The conflict killed hundreds of thousands and repeatedly threatened oil shipping routes.",
+    ],
+    major: true,
+  },
+  {
+    date: "1988-09-17",
+    era: "Seoul Games",
+    headline: "Seoul Olympics open with the world watching South Korea",
+    deck: "The Summer Games become a showcase for a rapidly changing host nation.",
+    dateline: "SEOUL",
+    article:
+      "The Seoul Olympics opened with 159 nations participating, placing South Korea's economic rise and democratic transition under global lights. For Jonah, the clipping is a reminder that markets notice countries not only through crises, but through the moments when the world decides to look at them differently.",
+    facts: [
+      "The Seoul Games ran from September 17 to October 2, 1988.",
+      "They were the first Summer Olympics in Asia since Tokyo in 1964.",
+      "The Games followed South Korea's major democratic reforms in 1987.",
+    ],
+  },
+  {
+    date: "1988-10-05",
+    era: "Chile Votes",
+    headline: "Chile votes no on extending Pinochet's rule",
+    deck: "A national plebiscite opens a path away from military dictatorship.",
+    dateline: "SANTIAGO",
+    article:
+      "Chileans rejected a proposal to keep General Augusto Pinochet in power, a result that pushed the country toward democratic elections. The front page is political electricity: ballots, fear, celebration, and the possibility that a long-closed door can be forced open without a tank in the street.",
+    facts: [
+      "The plebiscite asked whether Pinochet should remain president for another term.",
+      "The no vote won and led to presidential elections in 1989.",
+      "Chile's transition became one of the defining democratic turns in late Cold War Latin America.",
+    ],
+    major: true,
+  },
+  {
+    date: "1989-01-07",
+    era: "Showa Ends",
+    headline: "Emperor Hirohito dies, ending Japan's Showa era",
+    deck: "Japan enters mourning as Akihito prepares to become emperor.",
+    dateline: "TOKYO",
+    article:
+      "Emperor Hirohito died after a reign that stretched from militarism and world war to reconstruction and Japan's economic ascent. The front page compresses a century of trauma and recovery into one name, reminding Jonah that the same lifetime can contain collapse, reinvention, and prosperity.",
+    facts: [
+      "Hirohito became emperor in 1926 and reigned for more than six decades.",
+      "His death ended the Showa era and began the Heisei era under Akihito.",
+      "Japan was near the height of its late-1980s asset boom.",
+    ],
+  },
+  {
+    date: "1989-02-15",
+    era: "Afghan Exit",
+    headline: "Last Soviet troops leave Afghanistan",
+    deck: "General Boris Gromov crosses the Friendship Bridge as Moscow closes a costly chapter.",
+    dateline: "TERMEZ, UZBEK SSR",
+    article:
+      "The final Soviet soldiers left Afghanistan, ending a military campaign that had lasted more than nine years. The headline looks like an ending, but its facts read like a warning: power can leave faster than stability arrives, and the consequences of a war often keep traveling.",
+    facts: [
+      "The withdrawal completed the timetable set by the 1988 Geneva Accords.",
+      "The Soviet war in Afghanistan contributed to pressure on the Soviet state.",
+      "Afghanistan remained unstable after the withdrawal.",
+    ],
+    major: true,
+  },
+  {
+    date: "1989-04-15",
+    era: "Stadium Tragedy",
+    headline: "Hillsborough disaster kills soccer fans in Sheffield",
+    deck: "A crush at an FA Cup semifinal becomes a national tragedy and a test of accountability.",
+    dateline: "SHEFFIELD, ENGLAND",
+    article:
+      "A deadly crowd crush at Hillsborough Stadium killed Liverpool supporters and turned a soccer match into a public reckoning over policing, stadium safety, and media treatment of victims. Jonah reads it as a front page about systems failing people in full view.",
+    facts: [
+      "The disaster occurred during an FA Cup semifinal between Liverpool and Nottingham Forest.",
+      "Ninety-six people died initially; a later death raised the total associated with the disaster to 97.",
+      "The tragedy led to major changes in English stadium safety.",
+    ],
+  },
+  {
+    date: "1989-05-02",
+    era: "Iron Curtain Frays",
+    headline: "Hungary begins dismantling border fence with Austria",
+    deck: "A physical cut in the frontier hints at a much larger opening in Europe.",
+    dateline: "HUNGARIAN-AUSTRIAN BORDER",
+    article:
+      "Hungary began removing sections of its border fence with Austria, a practical decision that became a symbol of the Iron Curtain coming apart. The move gave East Germans a route west and helped turn pressure inside communist Europe into a flood of history.",
+    facts: [
+      "Hungary's border opening became a key step in the revolutions of 1989.",
+      "East German citizens later used Hungary as an escape route to the West.",
+      "The dismantling preceded the fall of the Berlin Wall later that year.",
+    ],
+    major: true,
+  },
+  {
+    date: "1989-07-19",
+    era: "Flight 232",
+    headline: "United Flight 232 crash-lands in Iowa after hydraulic failure",
+    deck: "A catastrophic engine failure becomes a story of loss, skill, and survival.",
+    dateline: "SIOUX CITY, IOWA",
+    article:
+      "United Airlines Flight 232 crash-landed at Sioux City after an engine failure destroyed the aircraft's hydraulic controls. The disaster killed many passengers, but the improvised teamwork in the cockpit and on the ground saved more than half the people aboard.",
+    facts: [
+      "The DC-10 was flying from Denver to Chicago when the engine failure occurred.",
+      "The crew used differential thrust to steer the crippled aircraft.",
+      "The crash became a major case study in crew resource management.",
+    ],
+  },
+  {
+    date: "1989-08-23",
+    era: "Baltic Way",
+    headline: "Human chain stretches across the Baltics for independence",
+    deck: "Estonians, Latvians, and Lithuanians join hands across hundreds of miles.",
+    dateline: "VILNIUS",
+    article:
+      "A human chain linked the Baltic capitals on the fiftieth anniversary of the Molotov-Ribbentrop Pact, demanding freedom from Soviet rule. The front page has no tanks and no trading floor, only people standing hand in hand long enough to make the map feel temporary.",
+    facts: [
+      "The Baltic Way connected Estonia, Latvia, and Lithuania.",
+      "The demonstration marked the 50th anniversary of the Nazi-Soviet pact.",
+      "All three Baltic states would regain independence as the Soviet Union weakened.",
+    ],
+    major: true,
+  },
+  {
+    date: "1989-09-22",
+    era: "Hurricane Hugo",
+    headline: "Hurricane Hugo slams South Carolina coast",
+    deck: "A powerful Atlantic storm leaves destruction from the Caribbean to Charleston.",
+    dateline: "CHARLESTON",
+    article:
+      "Hurricane Hugo made landfall near Charleston after battering islands across the Caribbean, cutting power, damaging homes, and testing disaster response. Jonah reads the page as weather, infrastructure, insurance, and luck all written in the same column inches.",
+    facts: [
+      "Hugo was one of the most damaging Atlantic hurricanes of its era.",
+      "The storm struck the Caribbean before reaching South Carolina.",
+      "The disaster became a major reference point for hurricane preparedness.",
+    ],
+  },
+  {
+    date: "1989-10-17",
+    era: "Bay Quake",
+    headline: "Loma Prieta earthquake hits Bay Area during World Series",
+    deck: "A 6.9-magnitude quake collapses structures and stops a national broadcast.",
+    dateline: "SAN FRANCISCO",
+    article:
+      "The Loma Prieta earthquake struck the San Francisco Bay Area minutes before a World Series game, killing dozens and damaging bridges, freeways, and homes. The timing put a regional disaster on national television and made infrastructure risk impossible to ignore.",
+    facts: [
+      "The earthquake struck on October 17, 1989, during World Series coverage.",
+      "The Cypress Street Viaduct collapse became one of the disaster's defining images.",
+      "The quake changed seismic planning and retrofit debates in California.",
+    ],
+    major: true,
+  },
+  {
+    date: "1989-12-03",
+    era: "Malta Summit",
+    headline: "Bush and Gorbachev say Cold War is nearing its end",
+    deck: "A stormy summit off Malta gives diplomats language for a changing world.",
+    dateline: "MALTA",
+    article:
+      "President George H. W. Bush and Soviet leader Mikhail Gorbachev met near Malta as communist governments were falling across Eastern Europe. No single document ended the Cold War there, but the page captures leaders trying to name a reality already moving faster than protocol.",
+    facts: [
+      "The summit followed the fall of the Berlin Wall by less than a month.",
+      "Bush and Gorbachev discussed arms control, Eastern Europe, and superpower relations.",
+      "The meeting became a symbolic marker of the Cold War's closing phase.",
+    ],
+    major: true,
+  },
+  {
+    date: "1990-01-31",
+    era: "Moscow Queue",
+    headline: "McDonald's opens in Moscow to enormous crowds",
+    deck: "Thousands line up for hamburgers as consumer capitalism arrives under Soviet arches.",
+    dateline: "MOSCOW",
+    article:
+      "McDonald's opened its first Soviet restaurant in Moscow, drawing crowds that turned fast food into a geopolitical symbol. Jonah knows a burger line is not the Berlin Wall, but the front page feels connected: the Cold War is changing not only through treaties, but through tastes, queues, and storefronts.",
+    facts: [
+      "The Pushkin Square restaurant was among the largest McDonald's locations in the world at the time.",
+      "The opening came during perestroika and widening Soviet economic experimentation.",
+      "Western consumer brands became visible symbols of a changing Soviet society.",
+    ],
+  },
+  {
+    date: "1990-03-21",
+    era: "Namibia Free",
+    headline: "Namibia becomes independent after decades of struggle",
+    deck: "Africa's newest nation raises its flag after U.N.-supervised elections.",
+    dateline: "WINDHOEK",
+    article:
+      "Namibia became independent from South African administration, closing a long chapter of colonial rule and regional conflict. The front page marks a birth certificate for a nation, the kind of clipping Grandpa would have saved because it proves maps can be rewritten by persistence.",
+    facts: [
+      "Sam Nujoma became Namibia's first president.",
+      "The transition followed U.N.-supervised elections in 1989.",
+      "Namibia's independence was tied to broader changes in southern Africa.",
+    ],
+    major: true,
+  },
+  {
+    date: "1990-05-22",
+    era: "Yemen Unites",
+    headline: "North and South Yemen unite as one republic",
+    deck: "Two governments merge in a bold attempt to settle a divided political geography.",
+    dateline: "SANA'A",
+    article:
+      "The Yemen Arab Republic and the People's Democratic Republic of Yemen unified, creating the Republic of Yemen. On paper it is a ceremony of flags and titles; under the surface are rival institutions, regional loyalties, and the hard work of making a country out of a signature.",
+    facts: [
+      "The unification joined North Yemen and South Yemen.",
+      "Ali Abdullah Saleh became president of the new republic.",
+      "Political tensions would later challenge the durability of the union.",
+    ],
+  },
+  {
+    date: "1990-06-03",
+    era: "Arms Cut",
+    headline: "Bush and Gorbachev sign chemical weapons accord",
+    deck: "Superpower leaders promise cuts while Europe is already changing under their feet.",
+    dateline: "WASHINGTON",
+    article:
+      "The United States and Soviet Union agreed to reduce chemical weapons stockpiles, extending the arms-control momentum of the late Cold War. The page is technical and enormous at once: tonnage, inspections, trust, and the hope that even the ugliest weapons can be negotiated down.",
+    facts: [
+      "The agreement was part of a Washington summit between Bush and Gorbachev.",
+      "Chemical weapons had gained renewed attention after attacks in the Iran-Iraq War.",
+      "The accord foreshadowed broader international chemical weapons controls.",
+    ],
+  },
+  {
+    date: "1990-07-26",
+    era: "Access Law",
+    headline: "Americans with Disabilities Act signed into law",
+    deck: "A sweeping civil-rights law bars discrimination and reshapes public access.",
+    dateline: "WASHINGTON",
+    article:
+      "President Bush signed the Americans with Disabilities Act, a landmark law covering employment, public services, transportation, and public accommodations. The front page is not a market shock, but it changes the physical and legal landscape Jonah walks through every day.",
+    facts: [
+      "The ADA was signed on the White House South Lawn.",
+      "The law prohibits discrimination against people with disabilities in major areas of public life.",
+      "Its implementation reshaped building design, transportation, employment, and public services.",
+    ],
+    major: true,
+  },
+  {
+    date: "1990-09-12",
+    era: "Germany Treaty",
+    headline: "Two Plus Four Treaty clears path for German reunification",
+    deck: "The postwar powers and the two German states settle the international terms of unity.",
+    dateline: "MOSCOW",
+    article:
+      "The Two Plus Four Treaty was signed by East Germany, West Germany, and the four victorious powers of World War II, settling external conditions for reunification. Jonah sees the legal machinery behind the cheering crowds: even miracles need signatures.",
+    facts: [
+      "The signatories were the two German states plus the United States, Soviet Union, Britain, and France.",
+      "The treaty restored full sovereignty to a unified Germany.",
+      "German reunification followed on October 3, 1990.",
+    ],
+    major: true,
+  },
+  {
+    date: "1990-11-12",
+    era: "Heisei Throne",
+    headline: "Akihito formally enthroned as emperor of Japan",
+    deck: "Ancient ritual meets a modern economic power at the height of Japan's global influence.",
+    dateline: "TOKYO",
+    article:
+      "Emperor Akihito's enthronement ceremonies placed Japan's imperial tradition before the world as the country's financial and industrial influence remained immense. The clipping gives Jonah a softer but revealing kind of headline: continuity presented at the exact moment an economy is about to face a hard turn.",
+    facts: [
+      "Akihito succeeded his father Hirohito after Hirohito's death in January 1989.",
+      "The Heisei era began in 1989.",
+      "Japan's asset-price bubble was near its peak around this period.",
+    ],
+  },
+  {
+    date: "1990-12-01",
+    era: "Tunnel Breakthrough",
+    headline: "Channel Tunnel crews break through beneath the sea",
+    deck: "British and French workers meet under the English Channel after years of boring.",
+    dateline: "UNDER THE ENGLISH CHANNEL",
+    article:
+      "Tunnel workers broke through beneath the English Channel, physically joining Britain and France in one of Europe's most ambitious infrastructure projects. The paper has the thrill of a hand reaching through chalk and darkness from one country to another.",
+    facts: [
+      "The breakthrough linked the British and French service tunnels.",
+      "The Channel Tunnel would later open to passenger service in 1994.",
+      "The project became a symbol of European engineering and integration.",
+    ],
+  },
+  {
+    date: "1991-02-24",
+    era: "Ground War",
+    headline: "Coalition ground offensive begins in Gulf War",
+    deck: "After weeks of air strikes, troops move to expel Iraqi forces from Kuwait.",
+    dateline: "SAUDI-KUWAITI BORDER",
+    article:
+      "U.S.-led coalition forces launched the ground campaign of Operation Desert Storm, moving rapidly against Iraqi troops in Kuwait and southern Iraq. The page is full of maps, oil fields, armor, and the fear that even a swift operation can carry consequences beyond the ceasefire.",
+    facts: [
+      "The ground war followed an air campaign that began in January 1991.",
+      "Coalition forces moved to reverse Iraq's August 1990 invasion of Kuwait.",
+      "Kuwait was liberated within days, with a ceasefire announced shortly after.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-03-03",
+    era: "Video Evidence",
+    headline: "Rodney King beating caught on videotape in Los Angeles",
+    deck: "A bystander's camera turns a police beating into national evidence.",
+    dateline: "LOS ANGELES",
+    article:
+      "A videotape showing Los Angeles police officers beating Rodney King after a traffic stop began circulating, forcing a national conversation about policing, race, and accountability. The front page feels modern in a new way: a private camera has changed what the public can prove.",
+    facts: [
+      "George Holliday recorded the beating from a nearby apartment balcony.",
+      "The video became central to later criminal proceedings.",
+      "The acquittal of officers in 1992 sparked the Los Angeles unrest.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-04-03",
+    era: "Ceasefire Terms",
+    headline: "U.N. sets Gulf War ceasefire terms for Iraq",
+    deck: "Security Council Resolution 687 demands weapons disclosures and reparations.",
+    dateline: "UNITED NATIONS",
+    article:
+      "The United Nations Security Council approved ceasefire terms after the Gulf War, including weapons obligations and reparations requirements for Iraq. Jonah reads the clipping as the bureaucratic afterlife of war: the shooting slows, then inspectors, sanctions, and disputes take over the front page.",
+    facts: [
+      "Resolution 687 established formal ceasefire conditions after the Gulf War.",
+      "The resolution addressed weapons of mass destruction and inspections.",
+      "Disputes over Iraqi compliance would shape international politics for years.",
+    ],
+  },
+  {
+    date: "1991-05-21",
+    era: "India Shock",
+    headline: "Rajiv Gandhi assassinated during campaign stop",
+    deck: "A suicide bombing kills India's former prime minister and stuns the world's largest democracy.",
+    dateline: "SRIPERUMBUDUR, INDIA",
+    article:
+      "Former Indian prime minister Rajiv Gandhi was killed by a suicide bomber while campaigning in Tamil Nadu. The assassination added another trauma to the Nehru-Gandhi political dynasty and shook an election already charged with questions of violence, reform, and national direction.",
+    facts: [
+      "Gandhi had served as India's prime minister from 1984 to 1989.",
+      "The assassination was linked to the Liberation Tigers of Tamil Eelam.",
+      "The killing altered India's 1991 election campaign.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-06-15",
+    era: "Pinatubo Erupts",
+    headline: "Mount Pinatubo erupts in one of the century's biggest blasts",
+    deck: "Ash darkens skies over the Philippines while evacuations save thousands.",
+    dateline: "LUZON, PHILIPPINES",
+    article:
+      "Mount Pinatubo exploded in a massive eruption that sent ash high into the atmosphere and forced broad evacuations near U.S. bases and Philippine communities. The front page is a reminder that earth systems can move markets, armies, and villages with no interest in human schedules.",
+    facts: [
+      "The eruption was among the largest volcanic events of the twentieth century.",
+      "Large evacuations reduced the death toll from what could have been a far greater disaster.",
+      "Ash and aerosols from Pinatubo affected global temperatures in the following years.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-07-31",
+    era: "START Signed",
+    headline: "Bush and Gorbachev sign START I nuclear arms treaty",
+    deck: "The superpowers agree to deep strategic weapons reductions as the Soviet system trembles.",
+    dateline: "MOSCOW",
+    article:
+      "The United States and Soviet Union signed the Strategic Arms Reduction Treaty, committing to major cuts in long-range nuclear weapons. The page reads like a technical manual with civilization hidden inside it: warheads, delivery systems, inspections, and the hope that numbers can make fear smaller.",
+    facts: [
+      "START I was signed in Moscow by George H. W. Bush and Mikhail Gorbachev.",
+      "The treaty required significant reductions in strategic nuclear arsenals.",
+      "The Soviet Union would dissolve before the treaty entered into force.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-09-06",
+    era: "Baltic Freedom",
+    headline: "Soviet Union recognizes Baltic independence",
+    deck: "Estonia, Latvia, and Lithuania break free as Moscow's center weakens.",
+    dateline: "MOSCOW",
+    article:
+      "The Soviet Union recognized the independence of Estonia, Latvia, and Lithuania, confirming what Baltic demonstrators had demanded for years. The headline is not just diplomatic; it is the sound of an empire losing its grip one republic at a time.",
+    facts: [
+      "The Baltic states had been incorporated into the Soviet Union during World War II.",
+      "Their independence movements accelerated during the late 1980s.",
+      "Recognition came after the failed August 1991 coup in Moscow.",
+    ],
+    major: true,
+  },
+  {
+    date: "1991-10-30",
+    era: "Madrid Peace",
+    headline: "Madrid peace conference opens with Israel and Arab neighbors at same table",
+    deck: "The post-Gulf War diplomatic push creates a rare public forum for Middle East negotiations.",
+    dateline: "MADRID",
+    article:
+      "The Madrid Peace Conference opened, bringing Israeli, Palestinian, and Arab representatives into direct talks under U.S. and Soviet sponsorship. Jonah sees a front page built on seating charts and symbolism, where simply showing up becomes news.",
+    facts: [
+      "The conference followed the 1991 Gulf War.",
+      "It helped launch direct and multilateral tracks in Middle East peace efforts.",
+      "The talks preceded the later Oslo process.",
+    ],
+  },
+  {
+    date: "1991-11-07",
+    era: "AIDS Awareness",
+    headline: "Magic Johnson says he is HIV-positive and retires",
+    deck: "A basketball superstar's announcement changes public conversation about AIDS.",
+    dateline: "LOS ANGELES",
+    article:
+      "Magic Johnson announced that he had tested positive for HIV and would retire from the Los Angeles Lakers, a moment that changed how millions understood the AIDS crisis. The headline moved fear, stigma, celebrity, medicine, and mortality onto the same sports page.",
+    facts: [
+      "Johnson was one of the NBA's most famous players and a five-time champion.",
+      "His announcement challenged misconceptions about who could contract HIV.",
+      "He later became a major public advocate for HIV/AIDS awareness.",
+    ],
+    major: true,
+  },
+  {
+    date: "1992-01-16",
+    era: "Peace Accords",
+    headline: "El Salvador peace accords end civil war",
+    deck: "A United Nations-backed agreement closes twelve years of conflict.",
+    dateline: "MEXICO CITY",
+    article:
+      "El Salvador's government and FMLN rebels signed peace accords that ended a civil war marked by massacres, displacement, and Cold War intervention. The clipping feels like a door opening in a country Jonah mostly knew from grim headlines.",
+    facts: [
+      "The Salvadoran civil war lasted from 1980 to 1992.",
+      "The Chapultepec Peace Accords were signed in Mexico City.",
+      "The agreement included military reforms and political participation for former rebels.",
+    ],
+  },
+  {
+    date: "1992-02-07",
+    era: "Europe Treaty",
+    headline: "Maastricht Treaty signed to create the European Union",
+    deck: "European leaders commit to deeper political union and a path toward a shared currency.",
+    dateline: "MAASTRICHT, NETHERLANDS",
+    article:
+      "European leaders signed the Maastricht Treaty, setting the foundation for the European Union and the eventual euro. The front page gives Jonah a long-horizon headline: the market may not move all at once, but institutions can change the rules investors live under.",
+    facts: [
+      "The treaty was signed by members of the European Communities.",
+      "It created the European Union framework.",
+      "It laid out a path toward Economic and Monetary Union and a single currency.",
+    ],
+    major: true,
+  },
+  {
+    date: "1992-03-01",
+    era: "Bosnia Vote",
+    headline: "Bosnia votes for independence as Yugoslavia fractures",
+    deck: "A referendum result points toward sovereignty and a widening Balkan crisis.",
+    dateline: "SARAJEVO",
+    article:
+      "Bosnia and Herzegovina voted for independence in a referendum boycotted by many Bosnian Serbs, deepening the breakup of Yugoslavia. The page carries the dread of a map splitting faster than diplomacy can hold it together.",
+    facts: [
+      "Bosnia and Herzegovina declared independence shortly after the referendum.",
+      "The Bosnian War began in 1992 and became one of Europe's worst conflicts since World War II.",
+      "Sarajevo would soon face a long siege.",
+    ],
+    major: true,
+  },
+  {
+    date: "1992-05-07",
+    era: "Endeavour Lifts",
+    headline: "Space shuttle Endeavour launches on maiden mission",
+    deck: "NASA's newest orbiter rises with a dramatic satellite rescue assignment.",
+    dateline: "CAPE CANAVERAL",
+    article:
+      "Space shuttle Endeavour launched on its first mission, carrying astronauts tasked with rescuing and repairing a stranded communications satellite. The clipping gives Jonah a dose of engineering theater: risk, teamwork, and the possibility of fixing something already falling away.",
+    facts: [
+      "Endeavour was built after the loss of Challenger.",
+      "Mission STS-49 included the first three-person spacewalk.",
+      "The crew captured and repaired the Intelsat VI satellite.",
+    ],
+  },
+  {
+    date: "1992-06-03",
+    era: "Earth Summit",
+    headline: "Rio Earth Summit opens with climate and biodiversity on the agenda",
+    deck: "World leaders gather to debate development, forests, warming, and the planet's future.",
+    dateline: "RIO DE JANEIRO",
+    article:
+      "The United Nations Conference on Environment and Development opened in Rio, bringing climate change, biodiversity, and sustainable development into high-level diplomacy. Jonah sees another slow fuse headline, the kind whose importance compounds long after the market close.",
+    facts: [
+      "The summit produced the U.N. Framework Convention on Climate Change.",
+      "It also helped launch the Convention on Biological Diversity.",
+      "The phrase sustainable development gained broader political force after Rio.",
+    ],
+    major: true,
+  },
+  {
+    date: "1992-07-25",
+    era: "Barcelona Games",
+    headline: "Barcelona Olympics open with Dream Team and a changed world",
+    deck: "A post-Cold War Games welcomes South Africa back and puts NBA stars on the Olympic stage.",
+    dateline: "BARCELONA",
+    article:
+      "The Barcelona Summer Olympics opened with a different geopolitical cast than earlier Games: a unified German team, former Soviet republics under a temporary banner, and South Africa returning after its Olympic ban. Jonah reads sports as a map of the world after the Cold War.",
+    facts: [
+      "The U.S. men's basketball Dream Team made its Olympic debut.",
+      "South Africa returned to the Olympics after decades of exclusion over apartheid.",
+      "Many former Soviet athletes competed as the Unified Team.",
+    ],
+  },
+  {
+    date: "1992-08-24",
+    era: "Andrew Hits",
+    headline: "Hurricane Andrew devastates South Florida",
+    deck: "One of the costliest U.S. storms destroys neighborhoods and shakes the insurance industry.",
+    dateline: "MIAMI-DADE COUNTY",
+    article:
+      "Hurricane Andrew tore across South Florida with catastrophic winds, flattening homes and exposing weaknesses in building codes, insurance models, and emergency planning. The clipping feels like a balance sheet written by weather.",
+    facts: [
+      "Andrew made landfall in South Florida as a Category 5 hurricane.",
+      "The storm later struck Louisiana after crossing the Gulf of Mexico.",
+      "The disaster led to major changes in Florida building codes and insurance practices.",
+    ],
+    major: true,
+  },
+  {
+    date: "1992-10-04",
+    era: "Amsterdam Crash",
+    headline: "Cargo jet crashes into Amsterdam apartment complex",
+    deck: "An El Al Boeing 747 freighter disaster kills residents in the Bijlmermeer neighborhood.",
+    dateline: "AMSTERDAM",
+    article:
+      "An El Al cargo jet crashed into apartment blocks in Amsterdam's Bijlmermeer district after losing engines shortly after takeoff. The front page turns aviation failure into neighborhood tragedy, with technical questions landing inside people's kitchens.",
+    facts: [
+      "El Al Flight 1862 crashed on October 4, 1992.",
+      "The aircraft was a Boeing 747 cargo plane.",
+      "The disaster killed crew members and residents on the ground.",
+    ],
+  },
+  {
+    date: "1992-12-09",
+    era: "Somalia Landing",
+    headline: "U.S. Marines land in Somalia for famine relief mission",
+    deck: "Operation Restore Hope begins under bright television lights and urgent humanitarian need.",
+    dateline: "MOGADISHU",
+    article:
+      "U.S. Marines arrived in Somalia as part of a multinational mission to secure aid routes during famine and civil disorder. The paper frames the mission as relief, but Jonah notices how quickly humanitarian headlines can become military ones.",
+    facts: [
+      "The mission was authorized by the United Nations.",
+      "Somalia was suffering famine amid civil conflict and state collapse.",
+      "The intervention would later become more dangerous and controversial.",
+    ],
+  },
+  {
+    date: "1993-01-20",
+    era: "New President",
+    headline: "Bill Clinton sworn in as 42nd U.S. president",
+    deck: "A generational change reaches Washington after a campaign about the economy.",
+    dateline: "WASHINGTON",
+    article:
+      "Bill Clinton took office after defeating President George H. W. Bush, promising economic renewal and a new Democratic approach after twelve years of Republican control of the White House. Jonah reads the page for policy hints, but the larger story is turnover: democracies schedule uncertainty.",
+    facts: [
+      "Clinton was the first Baby Boomer elected U.S. president.",
+      "The 1992 campaign emphasized recession, jobs, and health care.",
+      "Al Gore became vice president.",
+    ],
+  },
+  {
+    date: "1993-03-13",
+    era: "Superstorm",
+    headline: "Storm of the Century buries the East Coast",
+    deck: "A massive blizzard and cyclone system disrupts life from the Gulf Coast to Canada.",
+    dateline: "EASTERN UNITED STATES",
+    article:
+      "A huge storm system swept across the eastern United States, bringing snow, wind, coastal flooding, and travel paralysis over a vast region. The front page is meteorology at continental scale, proving that weather can become national infrastructure news overnight.",
+    facts: [
+      "The storm affected states from Florida to Maine and into Canada.",
+      "It brought blizzard conditions to parts of the Appalachians and Northeast.",
+      "Forecasting of the storm became a milestone for meteorologists.",
+    ],
+  },
+  {
+    date: "1993-04-19",
+    era: "Waco Fire",
+    headline: "Waco siege ends in fire after federal assault",
+    deck: "The Branch Davidian compound burns, killing dozens and igniting years of argument.",
+    dateline: "WACO, TEXAS",
+    article:
+      "A 51-day standoff between federal agents and the Branch Davidians ended when the compound caught fire during an assault, killing dozens inside. Jonah finds the paper hard to file: it is law enforcement, religion, media, and mistrust all folded into one blackened front page.",
+    facts: [
+      "The standoff began after a February 1993 raid by federal agents.",
+      "David Koresh led the Branch Davidian group at Mount Carmel.",
+      "The disaster became a lasting flashpoint in debates over federal power.",
+    ],
+    major: true,
+  },
+  {
+    date: "1993-05-24",
+    era: "Eritrea Free",
+    headline: "Eritrea declares independence after referendum",
+    deck: "A new nation emerges on the Red Sea after a long war with Ethiopia.",
+    dateline: "ASMARA",
+    article:
+      "Eritrea became independent after a referendum overwhelmingly backed separation from Ethiopia. The clipping is quiet compared with explosions and crashes, but Jonah can feel the weight of it: a flag, a port, a border, and a population stepping into a new national story.",
+    facts: [
+      "The independence referendum was held in April 1993.",
+      "Eritrea had fought a decades-long war for independence from Ethiopia.",
+      "Asmara became the capital of the new state.",
+    ],
+  },
+  {
+    date: "1993-06-27",
+    era: "Iraq Strike",
+    headline: "U.S. missiles strike Iraqi intelligence headquarters",
+    deck: "Washington says the attack answers an alleged plot against former President Bush.",
+    dateline: "BAGHDAD",
+    article:
+      "U.S. cruise missiles hit Iraq's intelligence headquarters after officials accused Iraq of plotting to assassinate former President George H. W. Bush in Kuwait. The page shows the Gulf War's aftershocks still reaching forward, one retaliation and inspection dispute at a time.",
+    facts: [
+      "The strike was ordered by President Clinton.",
+      "The alleged assassination plot involved Bush's April 1993 visit to Kuwait.",
+      "The attack highlighted continuing U.S.-Iraq tensions after the Gulf War.",
+    ],
+  },
+  {
+    date: "1993-07-09",
+    era: "Great Flood",
+    headline: "Mississippi and Missouri floodwaters swamp the Midwest",
+    deck: "Levees fail, towns evacuate, and farmland disappears under historic water.",
+    dateline: "MIDWEST",
+    article:
+      "Flooding across the Mississippi and Missouri river basins became one of the costliest U.S. natural disasters of the decade. Jonah studies the map and sees not a single storm but a season of rain, levees, crops, rail lines, and patience giving way.",
+    facts: [
+      "The Great Flood of 1993 affected nine Midwestern states.",
+      "Many communities fought rising water for weeks or months.",
+      "The disaster reshaped debates over levees, floodplains, and river management.",
+    ],
+    major: true,
+  },
+  {
+    date: "1993-10-03",
+    era: "Mogadishu Battle",
+    headline: "U.S. troops fight deadly battle in Mogadishu",
+    deck: "A raid in Somalia turns into an urban battle that shocks Washington.",
+    dateline: "MOGADISHU",
+    article:
+      "U.S. forces fought Somali militia fighters after a raid to capture aides to Mohamed Farrah Aidid went wrong, leaving American soldiers and many Somalis dead. The clipping shows how quickly a humanitarian mission can become a question about casualties, images, and political will.",
+    facts: [
+      "The battle followed the downing of U.S. helicopters in Mogadishu.",
+      "Eighteen American soldiers were killed.",
+      "The battle influenced U.S. decisions about overseas interventions in the 1990s.",
+    ],
+    major: true,
+  },
+  {
+    date: "1993-11-01",
+    era: "EU Begins",
+    headline: "Maastricht Treaty takes effect, creating the European Union",
+    deck: "Europe's integration project gains a new name, new powers, and bigger ambitions.",
+    dateline: "BRUSSELS",
+    article:
+      "The Maastricht Treaty entered into force, formally creating the European Union. The front page is not dramatic in the television sense, but Jonah recognizes the scale: institutions can move slowly and still redraw the economic map beneath every investor's feet.",
+    facts: [
+      "The treaty created the European Union from the European Communities framework.",
+      "It expanded cooperation on foreign policy, justice, and monetary union.",
+      "The euro would launch later as part of the treaty's monetary path.",
+    ],
+    major: true,
+  },
+  {
+    date: "1994-01-01",
+    era: "NAFTA Starts",
+    headline: "NAFTA takes effect as Mexico rebels seize towns in Chiapas",
+    deck: "Free trade begins while the Zapatista uprising exposes a different Mexican reality.",
+    dateline: "MEXICO CITY",
+    article:
+      "The North American Free Trade Agreement took effect, linking the U.S., Canada, and Mexico in a new trade framework, while Zapatista rebels launched an uprising in Chiapas the same day. The juxtaposition makes the front page crackle: globalization's promise and its backlash arrive together.",
+    facts: [
+      "NAFTA eliminated many tariffs among the United States, Canada, and Mexico.",
+      "The Zapatista uprising began in Chiapas on January 1, 1994.",
+      "The trade pact became one of the defining economic debates of the 1990s.",
+    ],
+    major: true,
+  },
+  {
+    date: "1994-03-27",
+    era: "Oscar Night",
+    headline: "Schindler's List wins best picture at Academy Awards",
+    deck: "A Holocaust drama turns Hollywood's biggest stage into a memorial and a reckoning.",
+    dateline: "LOS ANGELES",
+    article:
+      "Steven Spielberg's Schindler's List won best picture and multiple Academy Awards, bringing a stark black-and-white Holocaust film to the center of global popular culture. Jonah files the clipping under memory: some front pages matter because they shape what millions choose not to forget.",
+    facts: [
+      "The film won seven Academy Awards.",
+      "Spielberg won best director.",
+      "The film helped spur educational projects about Holocaust testimony and remembrance.",
+    ],
+  },
+  {
+    date: "1994-05-06",
+    era: "Chunnel Opens",
+    headline: "Queen and president open Channel Tunnel",
+    deck: "Britain and France inaugurate a rail link beneath the English Channel.",
+    dateline: "CALAIS",
+    article:
+      "Queen Elizabeth II and French President Francois Mitterrand formally opened the Channel Tunnel, turning the 1990 breakthrough into working infrastructure. The page is a celebration of steel, finance, engineering, and the old dream of making the sea less final.",
+    facts: [
+      "The Channel Tunnel links Folkestone in England with Coquelles near Calais.",
+      "It carries passenger and freight rail traffic.",
+      "Commercial service began after years of construction and testing.",
+    ],
+  },
+  {
+    date: "1994-06-17",
+    era: "Bronco Chase",
+    headline: "O.J. Simpson chase stops America in front of live television",
+    deck: "A murder investigation becomes a national media spectacle in real time.",
+    dateline: "LOS ANGELES",
+    article:
+      "Millions watched live as police followed a white Ford Bronco carrying O.J. Simpson on Los Angeles freeways. The front page captures a new media age: celebrity, crime, race, domestic violence, and cable television feeding one another by the minute.",
+    facts: [
+      "The chase followed charges related to the deaths of Nicole Brown Simpson and Ronald Goldman.",
+      "Television networks interrupted normal programming for live coverage.",
+      "The later trial became one of the most watched legal events in U.S. history.",
+    ],
+  },
+  {
+    date: "1994-08-12",
+    era: "Baseball Strike",
+    headline: "Baseball players strike, threatening the season",
+    deck: "A labor fight between owners and players puts America's pastime on hold.",
+    dateline: "NEW YORK",
+    article:
+      "Major League Baseball players went on strike, stopping the season and eventually leading to cancellation of the World Series. Jonah reads it as a reminder that even games are businesses, and even traditions can halt when labor and capital stop agreeing.",
+    facts: [
+      "The strike began on August 12, 1994.",
+      "The 1994 World Series was canceled.",
+      "The dispute centered on economics, including owners' push for a salary cap.",
+    ],
+  },
+  {
+    date: "1994-09-19",
+    era: "Haiti Mission",
+    headline: "U.S. troops enter Haiti after junta agrees to step down",
+    deck: "Operation Uphold Democracy aims to restore elected President Jean-Bertrand Aristide.",
+    dateline: "PORT-AU-PRINCE",
+    article:
+      "American forces entered Haiti after military leaders agreed to leave power, clearing a path for President Jean-Bertrand Aristide's return. The clipping carries the complicated language of intervention: democracy, troops, exile, and the question of what happens after the cameras leave.",
+    facts: [
+      "Aristide had been ousted in a 1991 coup.",
+      "A last-minute diplomatic mission helped avert a combat invasion.",
+      "U.S. forces entered as part of Operation Uphold Democracy.",
+    ],
+  },
+  {
+    date: "1994-10-26",
+    era: "Jordan-Israel Peace",
+    headline: "Jordan and Israel sign peace treaty",
+    deck: "King Hussein and Yitzhak Rabin formalize relations after decades of conflict.",
+    dateline: "ARAVA VALLEY",
+    article:
+      "Jordan and Israel signed a peace treaty, making Jordan the second Arab country to establish peace with Israel. The page gives Jonah another hopeful clipping from a decade full of unfinished negotiations: signatures do not solve everything, but they can change what is possible.",
+    facts: [
+      "The treaty was signed by King Hussein and Prime Minister Yitzhak Rabin.",
+      "Egypt had signed a peace treaty with Israel in 1979.",
+      "The agreement addressed borders, water, security, and diplomatic relations.",
+    ],
+    major: true,
+  },
+  {
+    date: "1994-11-08",
+    era: "Republican Wave",
+    headline: "Republicans win Congress in midterm landslide",
+    deck: "The GOP captures the House for the first time in four decades.",
+    dateline: "WASHINGTON",
+    article:
+      "Republicans won control of both chambers of Congress in a midterm wave powered by the Contract with America. The front page gives Jonah a lesson in policy risk: presidents matter, but so do committee gavels, budgets, and the mood between elections.",
+    facts: [
+      "Republicans captured the House of Representatives for the first time since the 1950s.",
+      "Newt Gingrich became Speaker of the House.",
+      "The election reshaped the Clinton presidency and federal budget politics.",
+    ],
+  },
+  {
+    date: "1995-02-26",
+    era: "Barings Falls",
+    headline: "Barings Bank collapses after rogue trading losses",
+    deck: "A centuries-old British bank is brought down by derivatives bets in Singapore.",
+    dateline: "LONDON",
+    article:
+      "Barings Bank collapsed after unauthorized derivatives trading by Nick Leeson produced losses the institution could not absorb. Jonah underlines the age of the bank twice: old names can fail fast when controls, leverage, and incentives line up badly.",
+    facts: [
+      "Barings was one of Britain's oldest merchant banks.",
+      "Losses were tied to futures and options trading in Singapore.",
+      "The collapse became a classic risk-management case study.",
+    ],
+  },
+  {
+    date: "1995-03-20",
+    era: "Tokyo Attack",
+    headline: "Sarin gas attack strikes Tokyo subway",
+    deck: "Aum Shinrikyo members release nerve agent during the morning commute.",
+    dateline: "TOKYO",
+    article:
+      "A sarin attack on the Tokyo subway killed and injured commuters, shocking Japan and the world with the vulnerability of ordinary transit systems. The front page is terrifying because it makes the routine feel fragile: a train, a briefcase, a morning like any other.",
+    facts: [
+      "The attack was carried out by members of Aum Shinrikyo.",
+      "Sarin is a deadly nerve agent.",
+      "The attack changed security thinking around terrorism and public transportation.",
+    ],
+    major: true,
+  },
+  {
+    date: "1995-05-11",
+    era: "Nuclear Treaty",
+    headline: "Nuclear Non-Proliferation Treaty extended indefinitely",
+    deck: "More than 170 nations back a permanent extension of the arms-control framework.",
+    dateline: "UNITED NATIONS",
+    article:
+      "Countries party to the Nuclear Non-Proliferation Treaty agreed to extend it indefinitely, preserving a central pillar of nuclear arms control. The clipping is dense with diplomacy but heavy with stakes: the future depends on promises written in treaty language.",
+    facts: [
+      "The NPT entered into force in 1970.",
+      "The 1995 review conference extended the treaty indefinitely.",
+      "The treaty rests on nonproliferation, disarmament, and peaceful nuclear energy commitments.",
+    ],
+  },
+  {
+    date: "1995-06-29",
+    era: "Shuttle-Mir",
+    headline: "Space shuttle Atlantis docks with Russian Mir station",
+    deck: "Former space-race rivals link spacecraft in orbit.",
+    dateline: "ORBIT",
+    article:
+      "Space shuttle Atlantis docked with Russia's Mir space station, joining American and Russian crews above a world still adjusting to the post-Cold War order. Jonah likes the symbolism: two old rivals meeting at thousands of miles per hour and calling it cooperation.",
+    facts: [
+      "The mission was STS-71.",
+      "It was the first shuttle docking with Mir.",
+      "The Shuttle-Mir program helped prepare for the International Space Station.",
+    ],
+  },
+  {
+    date: "1995-07-11",
+    era: "Srebrenica",
+    headline: "Srebrenica falls as Bosnian Serb forces overrun U.N. safe area",
+    deck: "Thousands of Bosniak men and boys will be killed in Europe's worst massacre since World War II.",
+    dateline: "SREBRENICA, BOSNIA",
+    article:
+      "Bosnian Serb forces captured Srebrenica, a declared U.N. safe area, before massacring thousands of Bosniak men and boys. The clipping is almost unbearable for Jonah: the phrase safe area sits on the page like an accusation.",
+    facts: [
+      "Srebrenica had been designated a U.N. safe area.",
+      "More than 8,000 Bosniak men and boys were killed.",
+      "International courts later recognized the massacre as genocide.",
+    ],
+    major: true,
+  },
+  {
+    date: "1995-08-09",
+    era: "Internet IPO",
+    headline: "Netscape IPO electrifies Wall Street and the web",
+    deck: "A young browser company turns public markets toward the commercial internet.",
+    dateline: "NEW YORK",
+    article:
+      "Netscape's initial public offering surged in its first day of trading, becoming a signature moment in the internet's arrival on Wall Street. Jonah can feel a new kind of future in the clipping: not a war or treaty, but a browser window and a stock chart pulling each other upward.",
+    facts: [
+      "Netscape made the Navigator web browser.",
+      "The IPO became an early symbol of the dot-com boom.",
+      "Investor enthusiasm for internet companies accelerated through the late 1990s.",
+    ],
+  },
+  {
+    date: "1995-09-03",
+    era: "Online Market",
+    headline: "AuctionWeb launches, planting the seed for eBay",
+    deck: "A small online auction site hints at how commerce might move onto the internet.",
+    dateline: "SAN JOSE",
+    article:
+      "Pierre Omidyar launched AuctionWeb, the online auction site that would become eBay. The front page would not have known how large the idea might get, but Grandpa's tote does: strangers are about to trust screens, ratings, payments, and packages in a new marketplace.",
+    facts: [
+      "AuctionWeb launched in September 1995.",
+      "The site was later renamed eBay.",
+      "Online person-to-person commerce became a major internet business model.",
+    ],
+  },
+  {
+    date: "1995-10-30",
+    era: "Quebec Vote",
+    headline: "Quebec narrowly rejects independence",
+    deck: "Canada holds together after a referendum decided by a razor-thin margin.",
+    dateline: "MONTREAL",
+    article:
+      "Quebec voters narrowly rejected sovereignty in a referendum that put Canada's future on the line. The clipping is a study in decimals and identity: a country can feel stable until a few percentage points reveal how close the map came to changing.",
+    facts: [
+      "The no side won by a narrow margin.",
+      "The referendum asked whether Quebec should become sovereign after offering a partnership with Canada.",
+      "The result influenced Canadian constitutional and national unity debates.",
+    ],
+  },
+  {
+    date: "1995-11-21",
+    era: "Dayton Peace",
+    headline: "Bosnia peace deal initialed at Dayton",
+    deck: "Negotiators agree to a framework to end the Bosnian War.",
+    dateline: "DAYTON, OHIO",
+    article:
+      "Leaders initialed the Dayton peace agreement after negotiations at Wright-Patterson Air Force Base, creating a framework to stop the war in Bosnia. The front page feels exhausted rather than triumphant, as if the ink itself understands what it has cost to get there.",
+    facts: [
+      "The agreement was negotiated by Bosnia, Croatia, and Serbia with U.S. mediation.",
+      "It preserved Bosnia and Herzegovina as one state with two main entities.",
+      "The formal signing took place in Paris in December 1995.",
+    ],
+    major: true,
+  },
+  {
+    date: "1996-02-08",
+    era: "Telecom Rewrite",
+    headline: "Telecommunications Act rewrites rules for media and networks",
+    deck: "A sweeping law changes competition, ownership, and the future shape of communications.",
+    dateline: "WASHINGTON",
+    article:
+      "President Clinton signed the Telecommunications Act of 1996, the first major overhaul of U.S. communications law in decades. Jonah sees a business headline disguised as legal text: cable, phones, radio, internet access, and consolidation are all waiting inside the same bill.",
+    facts: [
+      "The law was the first major rewrite of U.S. telecom policy since 1934.",
+      "It affected broadcasting, cable, telephone, and emerging internet services.",
+      "The act influenced media consolidation and network competition debates.",
+    ],
+  },
+  {
+    date: "1996-03-20",
+    era: "Mad Cow Crisis",
+    headline: "Britain links mad cow disease to human illness fears",
+    deck: "Officials say BSE may be connected to a new variant of Creutzfeldt-Jakob disease.",
+    dateline: "LONDON",
+    article:
+      "British officials announced a possible link between bovine spongiform encephalopathy and a fatal human brain disease, triggering public fear and trade disruption. The front page turns food, science, farming, and trust into one urgent question: what is safe to eat?",
+    facts: [
+      "BSE was commonly known as mad cow disease.",
+      "The announcement raised concern about variant Creutzfeldt-Jakob disease.",
+      "The crisis damaged Britain's beef industry and led to major controls.",
+    ],
+  },
+  {
+    date: "1996-04-12",
+    era: "Web Portal",
+    headline: "Yahoo IPO gives web portals a Wall Street spotlight",
+    deck: "Another internet company surges as investors chase the online future.",
+    dateline: "NEW YORK",
+    article:
+      "Yahoo went public and quickly became one of the defining names of the early consumer web. The clipping makes Jonah wonder how many future giants begin as directories, bookmarks, and a strange new habit called surfing.",
+    facts: [
+      "Yahoo began as a web directory created by Jerry Yang and David Filo.",
+      "The IPO came less than a year after Netscape's market debut.",
+      "Portal companies became central to late-1990s internet investing.",
+    ],
+  },
+  {
+    date: "1996-05-10",
+    era: "Everest Disaster",
+    headline: "Deadly storm traps climbers on Mount Everest",
+    deck: "A commercial climbing season turns tragic near the top of the world.",
+    dateline: "MOUNT EVEREST",
+    article:
+      "A storm on Mount Everest killed climbers from multiple expeditions, raising hard questions about commercialization, risk, and decision-making at extreme altitude. The page gives Jonah a brutal metaphor for ambition: reaching the summit is not the same as surviving the descent.",
+    facts: [
+      "The disaster occurred during the May 1996 Everest climbing season.",
+      "Several climbers died after being caught high on the mountain.",
+      "The tragedy became widely known through later books and reporting.",
+    ],
+  },
+  {
+    date: "1996-06-23",
+    era: "Console War",
+    headline: "Nintendo 64 launches in Japan with 3-D games at the center",
+    deck: "A new console generation turns living rooms toward polygon worlds.",
+    dateline: "TOKYO",
+    article:
+      "Nintendo launched the Nintendo 64 in Japan, pushing 3-D gaming and analog control into the mainstream console race. Jonah smiles at the clipping because it is not a statesman's page, but it still tells the future: play, technology, chips, and childhood are changing together.",
+    facts: [
+      "The Nintendo 64 launched first in Japan in June 1996.",
+      "Super Mario 64 became a landmark 3-D game.",
+      "The console competed with Sony's PlayStation and Sega's Saturn.",
+    ],
+  },
+  {
+    date: "1996-08-22",
+    era: "Welfare Reform",
+    headline: "Clinton signs welfare overhaul into law",
+    deck: "A major policy shift replaces Aid to Families with Dependent Children with a new program.",
+    dateline: "WASHINGTON",
+    article:
+      "President Clinton signed welfare reform legislation that created Temporary Assistance for Needy Families and imposed new work requirements and time limits. The front page is policy with human stakes, the kind Jonah knows can change kitchen-table math for millions.",
+    facts: [
+      "The law was formally the Personal Responsibility and Work Opportunity Reconciliation Act.",
+      "It replaced AFDC with TANF block grants.",
+      "The reform became a central domestic policy debate of the 1990s.",
+    ],
+  },
+  {
+    date: "1996-09-27",
+    era: "Taliban Kabul",
+    headline: "Taliban captures Kabul and takes power in Afghanistan",
+    deck: "A new hard-line regime seizes the capital after years of civil war.",
+    dateline: "KABUL",
+    article:
+      "The Taliban captured Kabul and imposed a harsh interpretation of Islamic rule after years of conflict among Afghan factions. Jonah reads the clipping with a chill because the Soviet withdrawal pages suddenly feel less like endings and more like earlier chapters.",
+    facts: [
+      "The Taliban emerged from the chaos after the Soviet withdrawal and Afghan civil war.",
+      "The group imposed severe restrictions, especially on women and girls.",
+      "Most countries did not recognize the Taliban government.",
+    ],
+    major: true,
+  },
+  {
+    date: "1996-10-07",
+    era: "Cable News",
+    headline: "Fox News Channel launches into the cable news race",
+    deck: "A new network enters an increasingly competitive twenty-four-hour news market.",
+    dateline: "NEW YORK",
+    article:
+      "Fox News Channel launched, joining a cable news environment already reshaped by CNN and MSNBC. The clipping feels small beside wars and earthquakes, but Jonah senses the media weather changing: the front page will soon have to compete with the screen every hour.",
+    facts: [
+      "Fox News was launched by News Corporation under Rupert Murdoch.",
+      "Roger Ailes was its founding chief executive.",
+      "The channel became a major force in U.S. politics and media.",
+    ],
+  },
+  {
+    date: "1996-11-05",
+    era: "Clinton Reelected",
+    headline: "Clinton wins second term as Republicans keep Congress",
+    deck: "The voters return divided government to Washington.",
+    dateline: "WASHINGTON",
+    article:
+      "President Clinton won reelection over Bob Dole while Republicans retained control of Congress, continuing the divided-government dynamic that shaped budgets and policy fights. Jonah reads the page as a reminder that political markets rarely give anyone a clean monopoly.",
+    facts: [
+      "Clinton defeated Republican nominee Bob Dole and Reform Party candidate Ross Perot.",
+      "Republicans kept control of the House and Senate.",
+      "The result set up further budget, tax, and impeachment-era conflicts.",
+    ],
+  },
+  {
+    date: "1997-01-23",
+    era: "First Woman",
+    headline: "Madeleine Albright sworn in as first female U.S. secretary of state",
+    deck: "A refugee child from Europe becomes America's top diplomat.",
+    dateline: "WASHINGTON",
+    article:
+      "Madeleine Albright became the first woman to serve as U.S. secretary of state, taking office at a moment of post-Cold War conflicts and negotiations. Jonah likes the biography inside the headline: history sometimes turns a refugee's childhood into a seat at the most powerful tables.",
+    facts: [
+      "Albright had served as U.S. ambassador to the United Nations.",
+      "She was born in Czechoslovakia and came to the United States as a child.",
+      "Her tenure dealt with NATO expansion, Iraq, Kosovo, and other post-Cold War issues.",
+    ],
+  },
+  {
+    date: "1997-02-19",
+    era: "Deng Dies",
+    headline: "Deng Xiaoping dies after transforming China's economy",
+    deck: "The architect of market-oriented reforms leaves a country changed and still changing.",
+    dateline: "BEIJING",
+    article:
+      "Deng Xiaoping died after steering China away from strict Maoist economics and toward reforms that opened the country to investment, trade, and growth. The front page is an obituary and a market history at once, because one political life helped redirect a fifth of humanity.",
+    facts: [
+      "Deng became China's paramount leader after Mao Zedong's era.",
+      "His reforms included special economic zones and greater openness to foreign investment.",
+      "China's rapid growth would become one of the major global economic stories of the next decades.",
+    ],
+    major: true,
+  },
+  {
+    date: "1997-03-22",
+    era: "Hale-Bopp",
+    headline: "Comet Hale-Bopp makes closest approach to Earth",
+    deck: "A brilliant comet turns night skies into a shared public spectacle.",
+    dateline: "WORLD SKY DESK",
+    article:
+      "Comet Hale-Bopp reached its closest approach to Earth, visible for months to people around the world. The clipping gives Jonah a rare headline with no villain and no policy fight, just a bright visitor reminding everyone to look up.",
+    facts: [
+      "Hale-Bopp was one of the most widely observed comets of the twentieth century.",
+      "It remained visible to the naked eye for an unusually long period.",
+      "The comet was discovered in 1995 by Alan Hale and Thomas Bopp.",
+    ],
+  },
+  {
+    date: "1997-04-13",
+    era: "Tiger Breakthrough",
+    headline: "Tiger Woods wins Masters by record margin",
+    deck: "A 21-year-old changes golf's future at Augusta.",
+    dateline: "AUGUSTA",
+    article:
+      "Tiger Woods won the Masters by a historic margin, becoming the tournament's youngest champion and its first Black winner. The front page feels like sport, culture, money, and representation all arriving in a green jacket.",
+    facts: [
+      "Woods won the 1997 Masters by 12 strokes.",
+      "He was 21 years old.",
+      "His victory transformed golf's popularity and commercial profile.",
+    ],
+  },
+  {
+    date: "1997-05-01",
+    era: "New Labour",
+    headline: "Tony Blair wins landslide as Labour returns to power",
+    deck: "Britain ends eighteen years of Conservative government.",
+    dateline: "LONDON",
+    article:
+      "Tony Blair led Labour to a landslide victory, ending nearly two decades of Conservative rule and launching the New Labour era. The clipping shows Jonah that markets watch not only party labels, but the stories parties tell about modernization, taxes, Europe, and public services.",
+    facts: [
+      "Labour won a large parliamentary majority in the 1997 general election.",
+      "Blair became prime minister at age 43.",
+      "The election ended Conservative control that began under Margaret Thatcher in 1979.",
+    ],
+  },
+  {
+    date: "1997-06-02",
+    era: "McVeigh Verdict",
+    headline: "Timothy McVeigh convicted in Oklahoma City bombing",
+    deck: "A federal jury finds him guilty in the deadliest act of domestic terrorism in U.S. history.",
+    dateline: "DENVER",
+    article:
+      "Timothy McVeigh was convicted for the Oklahoma City bombing, which killed 168 people at the Alfred P. Murrah Federal Building. The verdict does not erase the blast, but the front page gives families and the country a legal answer to one piece of the horror.",
+    facts: [
+      "The Oklahoma City bombing occurred on April 19, 1995.",
+      "McVeigh was tried in federal court in Denver.",
+      "The attack remained the deadliest domestic terrorist attack in U.S. history.",
+    ],
+    major: true,
+  },
+  {
+    date: "1997-08-06",
+    era: "Apple Lifeline",
+    headline: "Microsoft invests $150 million in Apple",
+    deck: "A bitter rivalry turns practical as Apple fights for survival.",
+    dateline: "BOSTON",
+    article:
+      "Steve Jobs announced that Microsoft would invest $150 million in Apple and continue making Office for the Mac, a stunning moment in a rivalry that had defined personal computing. Jonah circles the number and writes: sometimes the future depends on help from the competitor everyone loves to hate.",
+    facts: [
+      "The announcement came at Macworld Boston.",
+      "Steve Jobs had recently returned to Apple.",
+      "The deal helped stabilize confidence in Apple during a difficult period.",
+    ],
+  },
+  {
+    date: "1997-11-10",
+    era: "Telecom Deal",
+    headline: "WorldCom agrees to buy MCI in record telecom deal",
+    deck: "A huge merger signals the scale of the communications boom.",
+    dateline: "NEW YORK",
+    article:
+      "WorldCom agreed to acquire MCI in a massive telecommunications deal, reflecting the race to control networks, long-distance traffic, and internet-era infrastructure. The clipping has the feel of late-1990s confidence: bigger pipes, bigger debts, bigger promises.",
+    facts: [
+      "The deal was among the largest mergers announced up to that time.",
+      "Telecom companies were racing to serve rising data and internet demand.",
+      "WorldCom would later become central to one of the largest accounting scandals in U.S. history.",
+    ],
+  },
+  {
+    date: "1998-01-21",
+    era: "White House Scandal",
+    headline: "Lewinsky allegations engulf Clinton White House",
+    deck: "A legal and political storm begins around the president and a former intern.",
+    dateline: "WASHINGTON",
+    article:
+      "News of allegations involving President Clinton and Monica Lewinsky broke into public view, setting off investigations, denials, and a constitutional confrontation. Jonah reads the page and feels the decade's optimism snag on scandal, television, and law.",
+    facts: [
+      "The allegations became part of Independent Counsel Kenneth Starr's investigation.",
+      "Clinton would later be impeached by the House of Representatives.",
+      "The Senate acquitted Clinton in 1999.",
+    ],
+    major: true,
+  },
+  {
+    date: "1998-02-07",
+    era: "Nagano Games",
+    headline: "Nagano Winter Olympics open as NHL stars join the ice",
+    deck: "The Games bring new sports, big stars, and Japanese mountain weather to the world stage.",
+    dateline: "NAGANO",
+    article:
+      "The Nagano Winter Olympics opened with professional hockey players participating for the first time and snowboarding making its Olympic debut. The front page gives Jonah a lighter future page, proof that history also arrives in uniforms, medals, and kids staying up late to watch.",
+    facts: [
+      "The Nagano Games ran from February 7 to February 22, 1998.",
+      "Snowboarding debuted as an Olympic sport.",
+      "NHL players were allowed to compete in Olympic hockey for the first time.",
+    ],
+  },
+  {
+    date: "1998-03-23",
+    era: "Titanic Night",
+    headline: "Titanic wins 11 Oscars and ties Academy record",
+    deck: "A blockbuster romance becomes a cultural and box-office phenomenon.",
+    dateline: "LOS ANGELES",
+    article:
+      "Titanic dominated the Academy Awards, winning 11 Oscars and confirming its place as a global box-office sensation. Jonah files the clipping under cultural markets: stories can become industries when enough people decide to cry in the same dark room.",
+    facts: [
+      "Titanic won best picture and best director.",
+      "The film tied the record for most Academy Awards won by a single movie.",
+      "It became the first film to pass $1 billion at the worldwide box office.",
+    ],
+  },
+  {
+    date: "1998-05-11",
+    era: "Nuclear Tests",
+    headline: "India conducts nuclear tests, jolting South Asia",
+    deck: "A series of underground blasts draws condemnation and raises fears of an arms race.",
+    dateline: "POKHRAN, INDIA",
+    article:
+      "India conducted nuclear tests in the Rajasthan desert, declaring itself a nuclear weapons state and triggering international alarm. The front page carries the frightening arithmetic of deterrence: one country's security claim can become another country's countdown.",
+    facts: [
+      "The tests were known as Pokhran-II.",
+      "Pakistan conducted its own nuclear tests later in May 1998.",
+      "The tests intensified concerns about conflict between nuclear-armed neighbors.",
+    ],
+    major: true,
+  },
+  {
+    date: "1998-06-25",
+    era: "Windows 98",
+    headline: "Microsoft releases Windows 98 into the personal-computer boom",
+    deck: "A familiar start button carries internet tools deeper into homes and offices.",
+    dateline: "REDMOND",
+    article:
+      "Microsoft released Windows 98, bundling more internet features into the operating system used by millions of PCs. Jonah sees a consumer product headline with antitrust shadows behind it: the software layer is becoming a battlefield.",
+    facts: [
+      "Windows 98 followed Windows 95 during rapid home PC adoption.",
+      "Internet Explorer integration was central to the product and antitrust debates.",
+      "The U.S. government had filed a major antitrust case against Microsoft in 1998.",
+    ],
+  },
+  {
+    date: "1998-07-17",
+    era: "World Court",
+    headline: "Rome Statute adopted to create International Criminal Court",
+    deck: "Nations approve a permanent court for genocide, war crimes, and crimes against humanity.",
+    dateline: "ROME",
+    article:
+      "Diplomats adopted the Rome Statute, laying the foundation for the International Criminal Court. The clipping is legal architecture after a decade of atrocities, built on the idea that some crimes should not be left only to the politics of the moment.",
+    facts: [
+      "The Rome Statute was adopted on July 17, 1998.",
+      "The International Criminal Court would begin operating after the treaty entered into force in 2002.",
+      "The court's jurisdiction includes genocide, war crimes, and crimes against humanity.",
+    ],
+  },
+  {
+    date: "1998-10-12",
+    era: "Hate Crime Shock",
+    headline: "Matthew Shepard dies after brutal anti-gay attack",
+    deck: "A young man's killing in Wyoming sparks national grief and demands for hate-crime protections.",
+    dateline: "LARAMIE, WYOMING",
+    article:
+      "Matthew Shepard died after being beaten and left tied to a fence near Laramie, Wyoming, a killing widely understood as anti-gay violence. Jonah closes the clipping slowly, knowing some front pages change the country by forcing it to look at cruelty it had preferred to keep local.",
+    facts: [
+      "Shepard was a 21-year-old University of Wyoming student.",
+      "His death became a national symbol in LGBTQ rights and hate-crime debates.",
+      "The Matthew Shepard and James Byrd Jr. Hate Crimes Prevention Act became law in 2009.",
+    ],
+    major: true,
+  },
+  {
+    date: "1998-11-20",
+    era: "Station Begins",
+    headline: "First International Space Station module launches",
+    deck: "Zarya reaches orbit, beginning the assembly of a permanent orbital outpost.",
+    dateline: "BAIKONUR COSMODROME",
+    article:
+      "Russia launched Zarya, the first module of the International Space Station, beginning years of orbital assembly by former rivals and new partners. The front page gives Jonah a hopeful machine: an unfinished house in space, built one launch at a time.",
+    facts: [
+      "Zarya was launched on a Russian Proton rocket.",
+      "The module became the first component of the International Space Station.",
+      "The ISS represented cooperation among the United States, Russia, Europe, Japan, and Canada.",
+    ],
+    major: true,
+  },
+  {
+    date: "1999-02-12",
+    era: "Acquittal",
+    headline: "Senate acquits Clinton in impeachment trial",
+    deck: "The president remains in office after months of scandal and constitutional drama.",
+    dateline: "WASHINGTON",
+    article:
+      "The U.S. Senate acquitted President Clinton on impeachment charges, ending the trial without removing him from office. The front page feels both historic and exhausted, as though the country has been arguing in capital letters for too long.",
+    facts: [
+      "The House impeached Clinton in December 1998.",
+      "The Senate did not reach the two-thirds vote required for conviction.",
+      "Clinton was the second U.S. president to be impeached.",
+    ],
+    major: true,
+  },
+  {
+    date: "1999-03-24",
+    era: "Kosovo War",
+    headline: "NATO begins air strikes over Kosovo crisis",
+    deck: "The alliance launches a bombing campaign against Yugoslavia without U.N. Security Council authorization.",
+    dateline: "BRUSSELS",
+    article:
+      "NATO began air strikes against Yugoslavia in response to violence and displacement in Kosovo, opening a 78-day campaign. Jonah reads the page as another post-Cold War test: what can alliances do when sovereignty and mass violence collide?",
+    facts: [
+      "The campaign was named Operation Allied Force.",
+      "Kosovo's ethnic Albanian population faced repression and displacement.",
+      "Yugoslav forces withdrew from Kosovo after the campaign and diplomatic pressure.",
+    ],
+    major: true,
+  },
+  {
+    date: "1999-05-19",
+    era: "Phantom Menace",
+    headline: "Star Wars returns as The Phantom Menace opens",
+    deck: "Fans line up for the first new Star Wars film in sixteen years.",
+    dateline: "LOS ANGELES",
+    article:
+      "Star Wars: Episode I - The Phantom Menace opened to enormous anticipation, turning moviegoing into a mass cultural event again. The clipping is useful to Jonah because it shows another kind of economy: nostalgia, merchandise, franchises, and the power of a line outside a theater.",
+    facts: [
+      "The film was the first Star Wars theatrical release since Return of the Jedi in 1983.",
+      "It opened during a year of heavy media attention and fan anticipation.",
+      "The prequel era became a major entertainment business story.",
+    ],
+  },
+  {
+    date: "1999-06-10",
+    era: "Kosovo Deal",
+    headline: "Kosovo war winds down as Yugoslav forces agree to withdraw",
+    deck: "NATO suspends air campaign after a withdrawal agreement and U.N. action.",
+    dateline: "KUMANOVO",
+    article:
+      "Yugoslav military leaders agreed to withdraw forces from Kosovo, clearing the way for NATO to suspend bombing and for international forces to enter. The headline is relief with hard edges, because the refugees, graves, and politics do not withdraw on command.",
+    facts: [
+      "The Kumanovo agreement set terms for Yugoslav withdrawal.",
+      "U.N. Security Council Resolution 1244 authorized an international presence in Kosovo.",
+      "Kosovo's final status remained unresolved for years.",
+    ],
+  },
+  {
+    date: "1999-07-16",
+    era: "Kennedy Loss",
+    headline: "John F. Kennedy Jr. plane disappears near Martha's Vineyard",
+    deck: "A familiar American name returns to the front page in tragedy.",
+    dateline: "ATLANTIC OFF MARTHA'S VINEYARD",
+    article:
+      "A plane piloted by John F. Kennedy Jr. crashed into the Atlantic, killing Kennedy, Carolyn Bessette Kennedy, and Lauren Bessette. The front page is part accident report and part national memory, as another Kennedy tragedy becomes public grief.",
+    facts: [
+      "Kennedy was piloting a Piper Saratoga.",
+      "The aircraft was flying to Martha's Vineyard and then Cape Cod.",
+      "The crash killed all three people aboard.",
+    ],
+  },
+  {
+    date: "1999-08-30",
+    era: "East Timor Vote",
+    headline: "East Timor votes for independence from Indonesia",
+    deck: "A U.N.-backed referendum produces a decisive result and violent backlash.",
+    dateline: "DILI",
+    article:
+      "East Timorese voters chose independence from Indonesia in a U.N.-organized referendum, triggering violence by pro-Indonesian militias. The clipping gives Jonah another lesson in delayed consequences: a ballot can announce freedom before the streets are safe enough to hold it.",
+    facts: [
+      "Nearly four-fifths of voters chose independence.",
+      "Violence after the vote prompted international intervention.",
+      "East Timor, later Timor-Leste, became independent in 2002.",
+    ],
+    major: true,
+  },
+  {
+    date: "1999-09-23",
+    era: "Mars Lost",
+    headline: "NASA loses Mars Climate Orbiter after metric mix-up",
+    deck: "A navigation failure turns a space mission into an engineering cautionary tale.",
+    dateline: "PASADENA",
+    article:
+      "NASA lost the Mars Climate Orbiter after a units mismatch caused navigation errors near Mars. Jonah writes a note in the margin: sometimes the future is undone not by lack of ambition, but by a conversion nobody reconciled.",
+    facts: [
+      "The spacecraft was intended to study Martian weather and climate.",
+      "Investigators found a mismatch between English and metric units in navigation data.",
+      "The loss became a famous example of engineering process failure.",
+    ],
+  },
+  {
+    date: "1999-10-31",
+    era: "EgyptAir 990",
+    headline: "EgyptAir Flight 990 crashes into the Atlantic",
+    deck: "A passenger jet plunges off Nantucket, killing all aboard and raising difficult questions.",
+    dateline: "ATLANTIC OFF NANTUCKET",
+    article:
+      "EgyptAir Flight 990 crashed into the Atlantic Ocean after leaving New York for Cairo, killing all 217 people aboard. The investigation became internationally sensitive, with U.S. and Egyptian authorities disagreeing over interpretation and cause.",
+    facts: [
+      "The Boeing 767 departed John F. Kennedy International Airport.",
+      "All passengers and crew were killed.",
+      "The investigation produced dispute between U.S. and Egyptian officials.",
+    ],
+  },
+  {
+    date: "1999-12-31",
+    era: "Y2K Watch",
+    headline: "World braces for Y2K as clocks roll toward 2000",
+    deck: "Banks, utilities, airlines, and governments wait to see whether old code will break the new year.",
+    dateline: "GLOBAL TECHNOLOGY DESK",
+    article:
+      "The world entered the final hours before the year 2000 after years of Y2K remediation and warnings that two-digit dates could confuse computer systems. Jonah loves the absurdity and seriousness of it: civilization holding its breath over software written to save memory.",
+    facts: [
+      "Many older systems stored years with two digits, raising fears that 2000 could be read as 1900.",
+      "Governments and companies spent years checking and repairing software.",
+      "The rollover produced fewer major failures than many feared.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-01-10",
+    era: "Media Megamerger",
+    headline: "AOL and Time Warner announce record media merger",
+    deck: "The internet boom reaches for old media in a deal that defines the top of the era.",
+    dateline: "NEW YORK",
+    article:
+      "America Online and Time Warner announced a giant merger, blending dial-up internet confidence with magazines, cable, music, and film. Jonah can smell the top-of-the-cycle optimism in the ink: the future is certain, the synergy is enormous, and the price tag is almost too big to print.",
+    facts: [
+      "The announced deal valued the combined company at more than $300 billion.",
+      "AOL used its high market value to acquire a traditional media giant.",
+      "The merger later became a symbol of dot-com-era overconfidence.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-02-17",
+    era: "Windows 2000",
+    headline: "Microsoft launches Windows 2000 for business users",
+    deck: "A new operating system arrives as companies keep upgrading for the internet age.",
+    dateline: "SAN FRANCISCO",
+    article:
+      "Microsoft released Windows 2000, aiming at business desktops and servers as companies modernized networks after the Y2K push. The clipping is less glamorous than an IPO, but Jonah knows infrastructure headlines often age better than flashy ones.",
+    facts: [
+      "Windows 2000 was built on Microsoft's Windows NT line.",
+      "It targeted business and enterprise users.",
+      "The launch came while Microsoft was fighting a major antitrust case.",
+    ],
+  },
+  {
+    date: "2000-05-04",
+    era: "Love Bug",
+    headline: "ILOVEYOU computer worm races around the world",
+    deck: "A deceptive email attachment disrupts businesses and governments in hours.",
+    dateline: "MANILA",
+    article:
+      "The ILOVEYOU worm spread through email systems worldwide, overwriting files and clogging networks with messages that looked personal. The front page feels like a new kind of contagion: code moving at office speed through trust, curiosity, and address books.",
+    facts: [
+      "The worm used the subject line ILOVEYOU and a malicious attachment.",
+      "It caused widespread disruption and billions in estimated damage.",
+      "The outbreak highlighted the growing security risks of connected workplaces.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-07-25",
+    era: "Concorde Crash",
+    headline: "Concorde crashes after takeoff from Paris",
+    deck: "The supersonic jet's mystique is shattered in a deadly fire and crash.",
+    dateline: "GONESSE, FRANCE",
+    article:
+      "An Air France Concorde crashed shortly after takeoff from Charles de Gaulle Airport, killing passengers, crew, and people on the ground. The clipping turns a symbol of speed and luxury into wreckage, reminding Jonah that prestige does not repeal physics.",
+    facts: [
+      "Air France Flight 4590 was bound for New York.",
+      "The crash killed all 109 people aboard and four on the ground.",
+      "Concorde service was suspended and later ended in 2003.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-08-12",
+    era: "Kursk Disaster",
+    headline: "Russian submarine Kursk sinks in Barents Sea",
+    deck: "A naval disaster traps sailors and exposes Russia's post-Soviet strains.",
+    dateline: "BARENTS SEA",
+    article:
+      "The nuclear-powered submarine Kursk sank during exercises after explosions aboard, killing all 118 crew members. The front page is military tragedy and political test, with rescue delays and official secrecy drawing anger inside Russia and abroad.",
+    facts: [
+      "The Kursk sank during a Russian naval exercise.",
+      "All 118 crew members died.",
+      "The disaster became an early crisis for President Vladimir Putin.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-09-15",
+    era: "Sydney Games",
+    headline: "Sydney Olympics open with Australia on the world stage",
+    deck: "A new millennium Games celebrates sport, spectacle, and Aboriginal culture.",
+    dateline: "SYDNEY",
+    article:
+      "The Sydney Olympics opened with a ceremony that put Australia and Indigenous imagery before a global audience. Jonah watches another page where the world chooses to gather peacefully for a few weeks, which by now feels like its own kind of miracle.",
+    facts: [
+      "The Sydney Games ran from September 15 to October 1, 2000.",
+      "Cathy Freeman became one of the Games' defining figures.",
+      "The Olympics were widely praised for organization and atmosphere.",
+    ],
+  },
+  {
+    date: "2000-10-12",
+    era: "USS Cole",
+    headline: "Bomb attack tears hole in USS Cole in Yemen",
+    deck: "A suicide boat strike kills U.S. sailors and signals a growing terrorism threat.",
+    dateline: "ADEN",
+    article:
+      "A small boat packed with explosives struck the USS Cole while it refueled in Aden, killing 17 sailors. The front page is a grim warning Jonah cannot fully interpret yet: a new security era is approaching, but history has not revealed its largest page.",
+    facts: [
+      "The USS Cole was a U.S. Navy destroyer.",
+      "The attack occurred while the ship was refueling in Yemen.",
+      "Al-Qaeda was linked to the bombing.",
+    ],
+    major: true,
+  },
+  {
+    date: "2000-12-12",
+    era: "Election Decided",
+    headline: "Supreme Court halts Florida recount, effectively deciding presidency",
+    deck: "Bush v. Gore ends a five-week election crisis.",
+    dateline: "WASHINGTON",
+    article:
+      "The U.S. Supreme Court's decision in Bush v. Gore stopped the Florida recount, clearing the way for George W. Bush to become president. The clipping is all margins: ballots, chads, deadlines, courts, and the realization that institutions can become the headline.",
+    facts: [
+      "The 2000 election hinged on Florida's electoral votes.",
+      "The Court's decision was issued on December 12, 2000.",
+      "Al Gore conceded the next day.",
+    ],
+    major: true,
+  },
+  {
+    date: "2001-01-20",
+    era: "Bush Takes Office",
+    headline: "George W. Bush sworn in after disputed election",
+    deck: "A new administration begins under the shadow of Florida and a divided vote.",
+    dateline: "WASHINGTON",
+    article:
+      "George W. Bush took the oath as the 43rd president after one of the closest and most disputed elections in U.S. history. Jonah reads the page knowing that markets like clarity, but democracies sometimes begin a chapter with unresolved feelings.",
+    facts: [
+      "Bush lost the national popular vote but won the Electoral College.",
+      "The Florida recount dispute ended after Bush v. Gore.",
+      "Dick Cheney became vice president.",
+    ],
+  },
+  {
+    date: "2001-02-12",
+    era: "Asteroid Landing",
+    headline: "NEAR Shoemaker becomes first spacecraft to land on an asteroid",
+    deck: "NASA's probe touches down on Eros after completing its mapping mission.",
+    dateline: "JOHNS HOPKINS APL",
+    article:
+      "NASA's NEAR Shoemaker spacecraft landed on asteroid Eros, an improvised finale that turned an orbital mission into a first. The headline gives Jonah one of those future pages that feels almost fictional, except Grandpa's tote has made fiction harder to identify.",
+    facts: [
+      "NEAR Shoemaker orbited asteroid 433 Eros before landing.",
+      "The landing was not part of the original mission design.",
+      "It was the first spacecraft landing on an asteroid.",
+    ],
+  },
+  {
+    date: "2001-04-01",
+    era: "Hainan Incident",
+    headline: "U.S. spy plane lands in China after collision",
+    deck: "A midair crash creates a tense standoff between Washington and Beijing.",
+    dateline: "HAINAN ISLAND",
+    article:
+      "A U.S. Navy EP-3 surveillance plane made an emergency landing on China's Hainan Island after colliding with a Chinese fighter jet. The crew was detained, the aircraft was inspected, and the front page measured a new kind of great-power tension.",
+    facts: [
+      "A Chinese pilot was killed in the collision.",
+      "The U.S. crew was held for more than a week before release.",
+      "The incident strained early Bush administration relations with China.",
+    ],
+  },
+  {
+    date: "2001-05-24",
+    era: "Senate Switch",
+    headline: "Senator Jeffords leaves GOP, shifting Senate control",
+    deck: "A Vermont independent changes the balance of power in Washington.",
+    dateline: "WASHINGTON",
+    article:
+      "Senator Jim Jeffords announced he would leave the Republican Party and become an independent, handing Democrats effective control of the Senate. The clipping gives Jonah a clean civics lesson: sometimes one person's decision changes the agenda of an entire chamber.",
+    facts: [
+      "Jeffords represented Vermont.",
+      "His switch changed Senate organization and committee control.",
+      "The move complicated President Bush's early legislative strategy.",
+    ],
+  },
+  {
+    date: "2001-06-01",
+    era: "Nepal Palace",
+    headline: "Nepal royal massacre kills king and much of royal family",
+    deck: "Gunfire inside the palace throws a Himalayan monarchy into crisis.",
+    dateline: "KATHMANDU",
+    article:
+      "King Birendra of Nepal and several members of the royal family were killed in a palace massacre, stunning the country and fueling confusion and rumor. The front page reads like tragedy inside a locked room, but its political consequences spill into the street.",
+    facts: [
+      "The massacre killed King Birendra, Queen Aishwarya, and other royals.",
+      "Crown Prince Dipendra was officially blamed and died days later.",
+      "Gyanendra became king amid public suspicion and instability.",
+    ],
+    major: true,
+  },
+  {
+    date: "2001-07-20",
+    era: "Genoa G8",
+    headline: "G8 summit protests in Genoa turn deadly",
+    deck: "Globalization debates boil over in clashes between police and demonstrators.",
+    dateline: "GENOA",
+    article:
+      "Protests around the Group of Eight summit in Genoa turned violent, and demonstrator Carlo Giuliani was killed. The clipping returns Jonah to the argument that began in Seattle: global markets have critics, and the streets have become part of the negotiation.",
+    facts: [
+      "The Genoa summit drew large anti-globalization protests.",
+      "Carlo Giuliani was shot and killed during clashes.",
+      "The summit became a defining moment for protest policing debates in Europe.",
+    ],
+  },
+  {
+    date: "2001-08-09",
+    era: "Stem Cell Line",
+    headline: "Bush limits federal funding for embryonic stem cell research",
+    deck: "The president tries to split scientific promise from ethical conflict.",
+    dateline: "WASHINGTON",
+    article:
+      "President Bush announced that federal funding for embryonic stem cell research would be limited to existing cell lines. Jonah reads the page as future medicine trapped inside present politics, with families, labs, and churches all arguing over possibility.",
+    facts: [
+      "The policy allowed funding only for already-existing embryonic stem cell lines.",
+      "Stem cell research was seen as promising for regenerative medicine.",
+      "The decision became a major bioethics and science-policy debate.",
+    ],
+  },
+  {
+    date: "2001-10-26",
+    era: "Patriot Act",
+    headline: "Patriot Act signed as U.S. expands anti-terror powers",
+    deck: "Six weeks after September 11, Congress grants broad new surveillance and law-enforcement authorities.",
+    dateline: "WASHINGTON",
+    article:
+      "President Bush signed the USA Patriot Act, expanding government powers in the name of preventing terrorism. The front page shows how fast fear can become law, and how hard it can be to balance security, liberty, secrecy, and trust after an attack.",
+    facts: [
+      "The law followed the September 11 attacks and anthrax mailings.",
+      "It expanded surveillance, information-sharing, and law-enforcement tools.",
+      "Civil liberties debates over the act continued for years.",
+    ],
+    major: true,
+  },
+  {
+    date: "2001-11-13",
+    era: "Kabul Falls",
+    headline: "Northern Alliance enters Kabul as Taliban retreats",
+    deck: "Afghanistan's capital changes hands weeks after U.S.-led bombing begins.",
+    dateline: "KABUL",
+    article:
+      "Northern Alliance forces entered Kabul after Taliban fighters withdrew, a dramatic turn in the war that began after September 11. Jonah reads the headline with caution; capitals can fall quickly, but peace is rarely captured as cleanly as a city.",
+    facts: [
+      "The U.S.-led campaign in Afghanistan began in October 2001.",
+      "The Taliban retreated from Kabul in November.",
+      "A new political process began soon after, but the war continued for years.",
+    ],
+    major: true,
+  },
+  {
+    date: "2002-01-01",
+    era: "Euro Cash",
+    headline: "Euro notes and coins enter circulation",
+    deck: "Millions trade francs, marks, lire, and pesetas for a shared currency.",
+    dateline: "FRANKFURT",
+    article:
+      "Euro banknotes and coins entered daily use across much of Europe, making monetary union visible in wallets, shops, and cash registers. The clipping turns years of treaty language into something simple enough for Jonah's kids to understand: new money.",
+    facts: [
+      "The euro had launched for accounting and financial markets in 1999.",
+      "Physical notes and coins began circulating in 2002.",
+      "The changeover involved twelve initial euro-area countries.",
+    ],
+    major: true,
+  },
+  {
+    date: "2002-02-08",
+    era: "Salt Lake Games",
+    headline: "Salt Lake City Winter Olympics open under tight security",
+    deck: "The first Olympics after September 11 begins with ceremony, flags, and armed vigilance.",
+    dateline: "SALT LAKE CITY",
+    article:
+      "The Salt Lake City Winter Olympics opened under extraordinary security only months after the September 11 attacks. The Games also carried the memory of a bidding scandal, making the front page part celebration, part reassurance, and part institutional repair.",
+    facts: [
+      "The Games ran from February 8 to February 24, 2002.",
+      "Security was heightened after the September 11 attacks.",
+      "The Salt Lake bid scandal had previously shaken Olympic governance.",
+    ],
+  },
+  {
+    date: "2002-03-02",
+    era: "Afghan Mountains",
+    headline: "Operation Anaconda opens in eastern Afghanistan",
+    deck: "U.S. and allied forces battle al-Qaeda and Taliban fighters in the Shah-i-Kot Valley.",
+    dateline: "PAKTIA PROVINCE",
+    article:
+      "Operation Anaconda began in eastern Afghanistan, becoming one of the largest early battles of the post-September 11 war. Jonah sees that the war has moved from television maps to mountains, logistics, and the hard reality of finding enemies in terrain that refuses simple answers.",
+    facts: [
+      "The operation focused on the Shah-i-Kot Valley.",
+      "U.S., Afghan, and allied forces fought al-Qaeda and Taliban fighters.",
+      "The battle exposed challenges in intelligence, coordination, and mountain warfare.",
+    ],
+  },
+  {
+    date: "2002-04-09",
+    era: "Royal Farewell",
+    headline: "Britain mourns Queen Mother at Westminster funeral",
+    deck: "A royal funeral marks the passing of a figure tied to World War II memory.",
+    dateline: "LONDON",
+    article:
+      "Queen Elizabeth The Queen Mother was honored at a funeral in Westminster Abbey after a life that spanned the Edwardian era, World War II, and modern monarchy. Jonah files the clipping as family history on a national scale: mourning wrapped in ceremony.",
+    facts: [
+      "The Queen Mother died on March 30, 2002, at age 101.",
+      "Her funeral took place at Westminster Abbey.",
+      "She was widely associated with British morale during World War II.",
+    ],
+  },
+  {
+    date: "2002-06-30",
+    era: "Brazil Fifth",
+    headline: "Brazil wins fifth World Cup behind Ronaldo's two goals",
+    deck: "A global tournament ends with Brazil lifting the trophy in Yokohama.",
+    dateline: "YOKOHAMA",
+    article:
+      "Brazil defeated Germany to win the 2002 FIFA World Cup, with Ronaldo scoring twice in the final. The clipping lets Jonah breathe: sometimes the whole world gathers to argue about something mercifully simple, like whether a striker has found redemption.",
+    facts: [
+      "The 2002 World Cup was hosted by South Korea and Japan.",
+      "Brazil became the first nation to win five men's World Cup titles.",
+      "Ronaldo finished as the tournament's top scorer.",
+    ],
+  },
+  {
+    date: "2002-08-26",
+    era: "Earth Summit II",
+    headline: "Johannesburg summit opens with poverty and environment at center",
+    deck: "A decade after Rio, leaders revisit sustainable development promises.",
+    dateline: "JOHANNESBURG",
+    article:
+      "The World Summit on Sustainable Development opened in Johannesburg, revisiting the environmental and development agenda a decade after the Rio Earth Summit. Jonah notices how some headlines return like unpaid bills, demanding proof that promises became policy.",
+    facts: [
+      "The summit marked ten years after the 1992 Rio Earth Summit.",
+      "Its agenda linked poverty, water, energy, health, agriculture, and biodiversity.",
+      "Critics questioned whether governments were moving fast enough on sustainability.",
+    ],
+  },
+  {
+    date: "2002-09-12",
+    era: "Iraq Case",
+    headline: "Bush tells United Nations Iraq must disarm",
+    deck: "The president presses the case that Saddam Hussein defies weapons resolutions.",
+    dateline: "UNITED NATIONS",
+    article:
+      "President Bush addressed the United Nations and argued that Iraq had to comply with disarmament obligations or face consequences. The page returns Jonah to the same country that filled the tote in 1990 and 1991, proof that old wars can keep sending invoices.",
+    facts: [
+      "The speech came one year after the September 11 attacks.",
+      "The administration focused on Iraq's alleged weapons of mass destruction programs.",
+      "The debate led toward the 2003 U.S.-led invasion of Iraq.",
+    ],
+    major: true,
+  },
+  {
+    date: "2002-12-13",
+    era: "EU Enlargement",
+    headline: "European Union invites ten countries to join",
+    deck: "Copenhagen summit sets the stage for the bloc's largest expansion.",
+    dateline: "COPENHAGEN",
+    article:
+      "European Union leaders agreed to admit ten new members, many from Central and Eastern Europe, in a historic enlargement. Jonah sees the Cold War's afterlife becoming paperwork, accession dates, and the slow expansion of a common market.",
+    facts: [
+      "The invited countries included Poland, Hungary, the Czech Republic, and the Baltic states.",
+      "The enlargement formally took effect in 2004.",
+      "The decision expanded the EU eastward after the Cold War.",
+    ],
+    major: true,
+  },
+  {
+    date: "2003-01-24",
+    era: "Homeland Security",
+    headline: "Department of Homeland Security opens for business",
+    deck: "A new cabinet department combines agencies after September 11.",
+    dateline: "WASHINGTON",
+    article:
+      "The U.S. Department of Homeland Security began operations, reorganizing major pieces of federal security, border, emergency, and infrastructure functions. The clipping shows the administrative footprint of fear: agencies moving boxes because the country changed.",
+    facts: [
+      "DHS was created by legislation passed in 2002.",
+      "It combined parts of 22 federal agencies.",
+      "Its mission covered terrorism prevention, border security, and disaster response.",
+    ],
+  },
+  {
+    date: "2003-04-09",
+    era: "Baghdad Falls",
+    headline: "Baghdad falls as Saddam statue is pulled down",
+    deck: "U.S. forces enter the Iraqi capital three weeks after invasion begins.",
+    dateline: "BAGHDAD",
+    article:
+      "U.S. forces entered Baghdad and images of Saddam Hussein's statue being toppled circled the world. The front page looks decisive, but Jonah has read enough history by now to distrust the neatness of symbolic endings.",
+    facts: [
+      "The U.S.-led invasion of Iraq began on March 20, 2003.",
+      "The fall of Baghdad marked the collapse of Saddam Hussein's visible control of the capital.",
+      "An insurgency and occupation challenges followed.",
+    ],
+    major: true,
+  },
+  {
+    date: "2003-06-10",
+    era: "Mars Rover",
+    headline: "NASA launches Spirit rover toward Mars",
+    deck: "A six-wheeled robotic geologist begins the trip to the red planet.",
+    dateline: "CAPE CANAVERAL",
+    article:
+      "NASA launched the Spirit rover, the first of two Mars Exploration Rovers designed to study rocks, soil, and signs of ancient water. Jonah likes the contrast: while earthbound headlines argue over war, a small robot is headed off to read stone.",
+    facts: [
+      "Spirit launched on June 10, 2003.",
+      "Its twin rover Opportunity launched later that summer.",
+      "Both rovers were designed for 90-day missions but lasted far longer.",
+    ],
+  },
+  {
+    date: "2003-07-22",
+    era: "Saddam Sons",
+    headline: "Uday and Qusay Hussein killed in Mosul raid",
+    deck: "U.S. forces kill Saddam Hussein's sons as the Iraq occupation grows more dangerous.",
+    dateline: "MOSUL",
+    article:
+      "Uday and Qusay Hussein were killed during a U.S. raid in Mosul, removing two feared figures from Saddam Hussein's inner circle. The clipping offers a tactical success inside a larger uncertainty, the kind of headline that sounds final until the next one arrives.",
+    facts: [
+      "Uday and Qusay were sons of Saddam Hussein.",
+      "They were killed in a firefight with U.S. forces.",
+      "Saddam Hussein himself remained at large until December 2003.",
+    ],
+  },
+  {
+    date: "2003-08-14",
+    era: "Blackout",
+    headline: "Massive blackout cuts power across Northeast and Ontario",
+    deck: "Millions lose electricity in one of North America's largest outages.",
+    dateline: "NEW YORK",
+    article:
+      "A cascading power failure darkened cities across the northeastern United States and parts of Canada, stranding commuters and exposing grid fragility. Jonah reads the page by lamplight in his imagination and thinks about how modern life depends on systems most people never see.",
+    facts: [
+      "The blackout affected roughly 50 million people.",
+      "New York, Detroit, Cleveland, Toronto, and other cities lost power.",
+      "Investigations focused on grid management, tree contact, and cascading failures.",
+    ],
+    major: true,
+  },
+  {
+    date: "2003-09-10",
+    era: "WTO Cancun",
+    headline: "World trade talks open in Cancun amid farm-subsidy fight",
+    deck: "Developing countries press wealthy nations over agriculture and trade rules.",
+    dateline: "CANCUN",
+    article:
+      "World Trade Organization ministers gathered in Cancun with agriculture, subsidies, and development at the center of a bitter negotiation. The clipping shows globalization after the street protests: now the conflict is commas, tariffs, walkouts, and who gets to write the rules.",
+    facts: [
+      "The Cancun meeting was part of the Doha Development Round.",
+      "Agricultural subsidies became a major source of conflict.",
+      "The talks collapsed without the intended agreement.",
+    ],
+  },
+  {
+    date: "2003-10-24",
+    era: "Concorde Farewell",
+    headline: "Concorde makes final commercial flight",
+    deck: "The era of supersonic passenger travel closes with a landing at Heathrow.",
+    dateline: "LONDON",
+    article:
+      "Concorde completed its final commercial passenger flights, ending a glamorous and costly chapter in aviation. Jonah reads the clipping as technological humility: not every future that arrives stays affordable enough to keep.",
+    facts: [
+      "British Airways and Air France retired Concorde in 2003.",
+      "The 2000 Air France crash damaged confidence in the aircraft.",
+      "High operating costs and lower demand contributed to retirement.",
+    ],
+  },
+  {
+    date: "2003-11-23",
+    era: "Rose Revolution",
+    headline: "Georgia's president resigns after Rose Revolution protests",
+    deck: "Demonstrators carrying roses force a political turning point in Tbilisi.",
+    dateline: "TBILISI",
+    article:
+      "Eduard Shevardnadze resigned after mass protests over disputed parliamentary elections, a peaceful upheaval soon known as the Rose Revolution. The front page gives Jonah another image of people changing politics by showing up and refusing to leave.",
+    facts: [
+      "The protests followed allegations of election fraud.",
+      "Mikheil Saakashvili emerged as a leading opposition figure.",
+      "The Rose Revolution became part of a series of post-Soviet color revolutions.",
+    ],
+    major: true,
+  },
+  {
+    date: "2004-01-04",
+    era: "Mars Landing",
+    headline: "Spirit rover lands safely on Mars",
+    deck: "NASA celebrates as a robotic explorer sends signals from Gusev Crater.",
+    dateline: "PASADENA",
+    article:
+      "NASA's Spirit rover landed on Mars and began sending data from Gusev Crater, giving scientists a mobile laboratory on another world. Jonah reads the clipping to the kids because it sounds like a toy with a heroic job.",
+    facts: [
+      "Spirit landed on Mars on January 4, 2004 UTC.",
+      "The rover studied rocks and soil for evidence of past water environments.",
+      "Spirit operated for years beyond its planned 90-day mission.",
+    ],
+  },
+  {
+    date: "2004-02-04",
+    era: "Campus Network",
+    headline: "Facebook launches at Harvard",
+    deck: "A student social site begins with dorm-room scale and enormous future implications.",
+    dateline: "CAMBRIDGE, MASSACHUSETTS",
+    article:
+      "TheFacebook launched for Harvard students, giving a small campus network a start that would later reshape communication, advertising, politics, and privacy. The clipping feels almost too modest for the future it carries.",
+    facts: [
+      "The site was created by Mark Zuckerberg and classmates.",
+      "It initially served Harvard students before expanding to other schools.",
+      "Facebook would later become one of the world's largest social networks.",
+    ],
+  },
+  {
+    date: "2004-04-28",
+    era: "Abu Ghraib",
+    headline: "Abu Ghraib prison abuse images become public",
+    deck: "Photographs from Iraq ignite outrage and damage U.S. credibility.",
+    dateline: "BAGHDAD",
+    article:
+      "Photographs showing abuse of Iraqi prisoners by U.S. personnel at Abu Ghraib became public, turning the Iraq War's moral and legal questions into images the world could not unsee. Jonah writes nothing in the margin; the page is already loud enough.",
+    facts: [
+      "The images aired on U.S. television and appeared in major publications.",
+      "The scandal led to investigations, courts-martial, and global condemnation.",
+      "Abu Ghraib became a symbol of prisoner-abuse debates during the War on Terror.",
+    ],
+    major: true,
+  },
+  {
+    date: "2004-05-01",
+    era: "EU Expands",
+    headline: "European Union admits ten new members in historic expansion",
+    deck: "Much of post-communist Europe joins the bloc in one day.",
+    dateline: "BRUSSELS",
+    article:
+      "The European Union expanded from 15 to 25 members, admitting countries including Poland, Hungary, the Czech Republic, Slovakia, Slovenia, and the Baltic states. The clipping makes the Cold War's end feel administrative and enormous at the same time.",
+    facts: [
+      "The enlargement was the EU's largest single expansion.",
+      "Many new members were former communist states.",
+      "The expansion reshaped labor, trade, and political debates across Europe.",
+    ],
+    major: true,
+  },
+  {
+    date: "2004-07-22",
+    era: "9/11 Report",
+    headline: "9/11 Commission releases final report",
+    deck: "A bipartisan panel details failures before the attacks and urges reforms.",
+    dateline: "WASHINGTON",
+    article:
+      "The 9/11 Commission released its final report, reconstructing the attacks and describing intelligence, aviation, and policy failures that preceded them. The front page is not just about the past; it is a blueprint for how a country tries to learn while still grieving.",
+    facts: [
+      "The commission was formally the National Commission on Terrorist Attacks Upon the United States.",
+      "Its report became a bestseller and a major public document.",
+      "The commission recommended intelligence and security reforms.",
+    ],
+    major: true,
+  },
+  {
+    date: "2004-08-13",
+    era: "Athens Games",
+    headline: "Olympics return to Athens under global security watch",
+    deck: "The Games come home to Greece in the first Summer Olympics after September 11.",
+    dateline: "ATHENS",
+    article:
+      "The Athens Olympics opened with pageantry, heavy security, and the symbolic weight of returning the Games to Greece. Jonah reads it as a front page about continuity: old rituals surviving new fears.",
+    facts: [
+      "Athens hosted the first modern Olympics in 1896.",
+      "The 2004 Games ran from August 13 to August 29.",
+      "Security spending and preparedness drew intense attention after September 11.",
+    ],
+  },
+  {
+    date: "2004-09-01",
+    era: "Beslan Siege",
+    headline: "Beslan school siege begins in southern Russia",
+    deck: "Armed militants take children and adults hostage on the first day of school.",
+    dateline: "BESLAN, RUSSIA",
+    article:
+      "Militants seized a school in Beslan, taking more than a thousand hostages, many of them children. The front page is terrifying before it is even complete, because Jonah knows some stories are still getting worse while the ink dries.",
+    facts: [
+      "The siege began on September 1, 2004.",
+      "The crisis ended in violence on September 3.",
+      "More than 330 people were killed, many of them children.",
+    ],
+    major: true,
+  },
+  {
+    date: "2004-10-27",
+    era: "Red Sox End Curse",
+    headline: "Red Sox win first World Series since 1918",
+    deck: "Boston sweeps St. Louis and ends generations of baseball heartbreak.",
+    dateline: "ST. LOUIS",
+    article:
+      "The Boston Red Sox won the World Series for the first time in 86 years, turning sports superstition into citywide release. Jonah lets this one stay light; not every future clipping needs to bruise the heart.",
+    facts: [
+      "Boston swept the St. Louis Cardinals in four games.",
+      "The win ended an 86-year championship drought.",
+      "The Red Sox had come back from a 3-0 deficit against the Yankees in the ALCS.",
+    ],
+  },
+  {
+    date: "2005-01-30",
+    era: "Iraq Votes",
+    headline: "Iraqis vote in first national election since invasion",
+    deck: "Purple fingers become the image of a dangerous and historic polling day.",
+    dateline: "BAGHDAD",
+    article:
+      "Iraqis voted for a transitional national assembly despite insurgent threats and heavy security. The front page balances hope and danger: democracy is being photographed in ink-stained fingers while the war continues outside the frame.",
+    facts: [
+      "The election chose a transitional National Assembly.",
+      "Many voters marked their fingers with purple ink after casting ballots.",
+      "Sunni Arab participation was lower amid boycott calls and violence.",
+    ],
+    major: true,
+  },
+  {
+    date: "2005-02-14",
+    era: "Video Web",
+    headline: "YouTube founded as online video starts its next act",
+    deck: "A small startup begins building a home for clips, creators, and viral culture.",
+    dateline: "SAN MATEO",
+    article:
+      "YouTube was founded, adding another quiet technology clipping to Grandpa's tote. The page does not yet know about creators, tutorials, campaigns, music videos, and children saying watch this, but the future is already buffering.",
+    facts: [
+      "YouTube was founded by Steve Chen, Chad Hurley, and Jawed Karim.",
+      "The site launched publicly later in 2005.",
+      "Google acquired YouTube in 2006.",
+    ],
+  },
+  {
+    date: "2005-04-02",
+    era: "Papal Passing",
+    headline: "Pope John Paul II dies after historic papacy",
+    deck: "Crowds gather in Rome and around the world for a pope who shaped the late Cold War and global Catholicism.",
+    dateline: "VATICAN CITY",
+    article:
+      "Pope John Paul II died after more than 26 years leading the Roman Catholic Church. The front page spans faith, politics, Poland, youth gatherings, illness, and the role one figure played in the spiritual and diplomatic life of an era.",
+    facts: [
+      "John Paul II became pope in 1978.",
+      "He was the first non-Italian pope in centuries.",
+      "He was widely credited with influencing resistance to communism in Eastern Europe.",
+    ],
+    major: true,
+  },
+  {
+    date: "2005-05-29",
+    era: "Europe Says No",
+    headline: "French voters reject European Union constitution",
+    deck: "A referendum defeat throws Europe's integration project into doubt.",
+    dateline: "PARIS",
+    article:
+      "French voters rejected the proposed European Union constitution, dealing a major blow to leaders trying to streamline the enlarged bloc. Jonah reads the page as a reminder that institutions built by treaties still have to survive voters.",
+    facts: [
+      "The French referendum rejected the EU constitutional treaty.",
+      "Dutch voters rejected the treaty days later.",
+      "The defeat led to a period of uncertainty before the later Lisbon Treaty.",
+    ],
+  },
+  {
+    date: "2005-06-01",
+    era: "Dutch No",
+    headline: "Dutch voters reject EU constitution days after French no",
+    deck: "A second referendum defeat deepens Europe's political crisis.",
+    dateline: "THE HAGUE",
+    article:
+      "The Netherlands rejected the proposed EU constitution, confirming that doubts about integration were not confined to France. The clipping shows Jonah a democratic brake pedal at continental scale.",
+    facts: [
+      "The Dutch referendum followed France's rejection on May 29.",
+      "The proposed EU constitution required ratification by member states.",
+      "The treaty was abandoned and later replaced by the Lisbon Treaty framework.",
+    ],
+  },
+  {
+    date: "2005-09-29",
+    era: "New Chief Justice",
+    headline: "John Roberts sworn in as chief justice",
+    deck: "A generational shift begins at the U.S. Supreme Court.",
+    dateline: "WASHINGTON",
+    article:
+      "John Roberts was sworn in as Chief Justice of the United States after confirmation by the Senate. The front page gives Jonah the long view of law: some decisions start as appointments and echo for decades.",
+    facts: [
+      "Roberts succeeded Chief Justice William Rehnquist.",
+      "He was 50 years old when sworn in.",
+      "His confirmation began a new era for the Supreme Court.",
+    ],
+  },
+  {
+    date: "2005-11-22",
+    era: "Merkel Era",
+    headline: "Angela Merkel becomes Germany's first woman chancellor",
+    deck: "A physicist from the former East takes charge of Europe's largest economy.",
+    dateline: "BERLIN",
+    article:
+      "Angela Merkel became Germany's first female chancellor and the first from the former East Germany, leading a grand coalition after a close election. The clipping brings Jonah back to the Berlin Wall page and shows how far a life can travel after a wall opens.",
+    facts: [
+      "Merkel led the Christian Democratic Union.",
+      "She grew up in East Germany.",
+      "Germany's economy and EU role made her one of Europe's most important leaders.",
+    ],
+    major: true,
+  },
+  {
+    date: "2005-12-13",
+    era: "Hong Kong WTO",
+    headline: "WTO ministers open Hong Kong talks amid development pressure",
+    deck: "Trade negotiators confront farm subsidies, tariffs, and protests.",
+    dateline: "HONG KONG",
+    article:
+      "World Trade Organization ministers opened talks in Hong Kong, trying to revive the Doha Round's promise of development-focused trade liberalization. Jonah sees another front page about the rules behind prices: who gets access, who gets protection, and who gets heard.",
+    facts: [
+      "The meeting was part of the Doha Development Agenda.",
+      "Agriculture and market access remained major disputes.",
+      "Protests accompanied the negotiations.",
+    ],
+  },
+  {
+    date: "2006-01-15",
+    era: "Comet Dust",
+    headline: "NASA Stardust capsule returns comet samples to Earth",
+    deck: "A tiny capsule lands in Utah carrying particles from comet Wild 2.",
+    dateline: "UTAH TEST AND TRAINING RANGE",
+    article:
+      "NASA's Stardust mission returned samples of comet dust to Earth, giving scientists primitive material from the early solar system. Jonah reads this page twice because it makes Grandpa's time trick feel less lonely: humans are always trying to bring impossible things home.",
+    facts: [
+      "Stardust collected samples from comet Wild 2.",
+      "The return capsule landed in Utah.",
+      "It was the first mission to return comet samples to Earth.",
+    ],
+  },
+  {
+    date: "2006-02-10",
+    era: "Turin Games",
+    headline: "Turin Winter Olympics open in Italy",
+    deck: "The Olympic flame returns to Europe with security, spectacle, and Alpine stakes.",
+    dateline: "TURIN",
+    article:
+      "The Turin Winter Olympics opened, bringing athletes from around the world to northern Italy. The clipping is not a shock, but it gives Jonah another ordinary wonder: nations that argue all year still agree to time downhill skiing to the hundredth.",
+    facts: [
+      "The Turin Games ran from February 10 to February 26, 2006.",
+      "Italy hosted the Winter Olympics for the second time.",
+      "The Games included athletes from 80 national Olympic committees.",
+    ],
+  },
+  {
+    date: "2006-03-21",
+    era: "First Tweet",
+    headline: "Twitter begins with a five-word status update",
+    deck: "A tiny message service starts a communications experiment that will reshape news speed.",
+    dateline: "SAN FRANCISCO",
+    article:
+      "Jack Dorsey sent the first message on the service that became Twitter, a modest status update that would grow into a global platform for news, jokes, movements, markets, and misinformation. Jonah sees another quiet technological seed hiding in plain sight.",
+    facts: [
+      "The first tweet was sent by Jack Dorsey.",
+      "Twitter launched publicly later in 2006.",
+      "The platform became central to real-time news and public conversation.",
+    ],
+  },
+  {
+    date: "2006-04-24",
+    era: "Nepal Protests",
+    headline: "Nepal's king restores parliament after mass protests",
+    deck: "Weeks of demonstrations force a retreat from royal rule.",
+    dateline: "KATHMANDU",
+    article:
+      "King Gyanendra agreed to restore Nepal's parliament after mass pro-democracy protests. The clipping connects back to the royal massacre page in Jonah's tote, showing a country still wrestling its way toward a different political future.",
+    facts: [
+      "The protests were part of Nepal's 2006 democracy movement.",
+      "King Gyanendra had taken direct control in 2005.",
+      "The crisis helped pave the way toward the end of Nepal's monarchy.",
+    ],
+    major: true,
+  },
+  {
+    date: "2006-06-29",
+    era: "War Powers",
+    headline: "Supreme Court rejects Bush military commissions",
+    deck: "Hamdan v. Rumsfeld says Guantanamo tribunals violate U.S. and international law.",
+    dateline: "WASHINGTON",
+    article:
+      "The Supreme Court ruled against the Bush administration's military commissions for Guantanamo detainees in Hamdan v. Rumsfeld. The front page puts war powers, courts, terrorism, and Geneva Convention obligations into a single legal collision.",
+    facts: [
+      "The case involved Salim Ahmed Hamdan, a former driver for Osama bin Laden.",
+      "The Court held that the commissions as structured were not authorized by Congress.",
+      "Congress responded later with the Military Commissions Act.",
+    ],
+  },
+  {
+    date: "2006-08-24",
+    era: "Pluto Demoted",
+    headline: "Astronomers reclassify Pluto as a dwarf planet",
+    deck: "A vote in Prague redraws the solar system children memorized.",
+    dateline: "PRAGUE",
+    article:
+      "The International Astronomical Union redefined the term planet, reclassifying Pluto as a dwarf planet. Jonah enjoys the family argument this clipping causes; even the sky, apparently, has bylaws.",
+    facts: [
+      "The International Astronomical Union voted on the definition of planet.",
+      "Pluto had been considered the ninth planet since 1930.",
+      "The decision reflected discoveries of other objects in the Kuiper Belt.",
+    ],
+  },
+  {
+    date: "2006-09-26",
+    era: "Open Facebook",
+    headline: "Facebook opens beyond colleges to the wider public",
+    deck: "A campus network starts becoming a mass social platform.",
+    dateline: "PALO ALTO",
+    article:
+      "Facebook opened registration to a much broader public, moving beyond its early college-based identity. The clipping gives Jonah another technology page whose eventual meaning is larger than its launch copy.",
+    facts: [
+      "Facebook initially served college networks.",
+      "The 2006 opening expanded access to users with valid email addresses and age eligibility.",
+      "The platform's growth accelerated after broader registration.",
+    ],
+  },
+  {
+    date: "2006-12-30",
+    era: "Saddam Executed",
+    headline: "Saddam Hussein executed in Iraq",
+    deck: "The former dictator is hanged after conviction for crimes against humanity.",
+    dateline: "BAGHDAD",
+    article:
+      "Saddam Hussein was executed after an Iraqi tribunal convicted him for crimes against humanity in the Dujail case. The headline closes one personal chapter of Iraq's history, but the country around it remains violent, divided, and unfinished.",
+    facts: [
+      "Saddam Hussein was captured by U.S. forces in December 2003.",
+      "He was convicted over killings tied to the town of Dujail.",
+      "The execution drew international controversy and did not end Iraq's instability.",
+    ],
+    major: true,
+  },
+  {
+    date: "2007-01-09",
+    era: "iPhone Unveiled",
+    headline: "Steve Jobs introduces iPhone as phone, iPod, and internet device",
+    deck: "Apple says a touchscreen device will combine three products in one.",
+    dateline: "SAN FRANCISCO",
+    article:
+      "Steve Jobs introduced the iPhone at Macworld, presenting it as a phone, widescreen iPod, and internet communicator in one device. Jonah sees the future before it is in anyone's pocket, and Mara calls it the front page that looks most like a magic trick.",
+    facts: [
+      "Jobs introduced the iPhone on January 9, 2007.",
+      "The first iPhone went on sale in June 2007.",
+      "The device helped reshape mobile computing, software, and media habits.",
+    ],
+    major: true,
+  },
+  {
+    date: "2007-03-13",
+    era: "Subprime Crack",
+    headline: "New Century crisis flashes warning in subprime mortgage market",
+    deck: "A major subprime lender says funding has been cut off as housing stress spreads.",
+    dateline: "IRVINE, CALIFORNIA",
+    article:
+      "New Century Financial, one of the largest U.S. subprime mortgage lenders, warned that its lenders had cut off financing and that it faced a severe liquidity crisis. The clipping gives Jonah early thunder from a storm that will soon be impossible to miss.",
+    facts: [
+      "New Century specialized in subprime mortgage lending.",
+      "The company filed for bankruptcy in April 2007.",
+      "Its collapse became one of the early visible failures of the housing-credit boom.",
+    ],
+    major: true,
+  },
+  {
+    date: "2007-04-16",
+    era: "Virginia Tech",
+    headline: "Virginia Tech shooting kills 32 people",
+    deck: "A university campus becomes the scene of the deadliest mass shooting in modern U.S. history at the time.",
+    dateline: "BLACKSBURG, VIRGINIA",
+    article:
+      "A gunman killed 32 people at Virginia Tech before taking his own life, devastating a campus and reigniting debates over gun violence, mental health, and emergency warnings. Jonah reads the names slowly because numbers alone make grief too easy to file away.",
+    facts: [
+      "The attack took place in two locations on campus.",
+      "Thirty-two victims were killed and many others were wounded.",
+      "The shooting led to reviews of campus alert systems and mental-health procedures.",
+    ],
+    major: true,
+  },
+  {
+    date: "2007-05-06",
+    era: "France Chooses",
+    headline: "Nicolas Sarkozy wins French presidency",
+    deck: "France elects a center-right reformer after a high-turnout runoff.",
+    dateline: "PARIS",
+    article:
+      "Nicolas Sarkozy won France's presidential election, defeating Segolene Royal and promising reform, work, and a different political style. The clipping gives Jonah a European politics page at the edge of a financial storm not yet fully visible.",
+    facts: [
+      "Sarkozy led the Union for a Popular Movement.",
+      "Segolene Royal was the Socialist Party nominee.",
+      "The election drew high turnout and intense debate over reform and identity.",
+    ],
+  },
+  {
+    date: "2007-07-17",
+    era: "Bear Funds",
+    headline: "Bear Stearns hedge funds collapse under mortgage losses",
+    deck: "Subprime bets that once looked contained begin leaking into Wall Street balance sheets.",
+    dateline: "NEW YORK",
+    article:
+      "Bear Stearns told investors that two mortgage-linked hedge funds had little or no value left, a sharp sign that subprime losses were moving through leveraged finance. Jonah sees the old pattern again: faraway trouble becomes local when borrowed money is involved.",
+    facts: [
+      "The funds were heavily exposed to mortgage-backed securities.",
+      "Their collapse raised concern about leverage and valuation in credit markets.",
+      "Bear Stearns itself would fail in March 2008, after Jonah's twenty-year game window.",
+    ],
+    major: true,
+  },
+  {
+    date: "2007-10-09",
+    era: "Market Peak",
+    headline: "Dow closes at record high as credit worries gather",
+    deck: "Stocks celebrate a peak while the mortgage crisis keeps spreading underneath.",
+    dateline: "NEW YORK",
+    article:
+      "The Dow Jones Industrial Average closed at a record high even as credit-market stress and housing losses were already appearing across the financial system. The page is the kind Grandpa's tote was built for: the headline looks triumphant, but the footnotes are growling.",
+    facts: [
+      "The Dow closed above 14,000 on October 9, 2007.",
+      "Credit markets had already been shaken by subprime losses in the summer.",
+      "The broader financial crisis would deepen dramatically in 2008.",
+    ],
+    major: true,
+  },
+];
+
+const priceSources = {
+  sp500: "https://raw.githubusercontent.com/vijinho/sp500/master/csv/sp500.csv",
+  gold: "https://prices.lbma.org.uk/json/gold_pm.json",
+};
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 54);
+}
+
+function parseSp500Csv(text) {
+  const prices = new Map();
+
+  for (const line of text.trim().split(/\r?\n/).slice(1)) {
+    const match = line.match(/^(\d+),"([^"]+)",([^,]+),([^,]+),([^,]+),([^,]+)/);
+    if (!match) {
+      continue;
+    }
+
+    prices.set(match[2].slice(0, 10), Number(match[6]));
+  }
+
+  return prices;
+}
+
+function parseGoldJson(rows) {
+  return new Map(
+    rows
+      .map((row) => [row.d, Number(row.v?.[0])])
+      .filter(([, value]) => Number.isFinite(value)),
+  );
+}
+
+function nextAvailablePrice(prices, date) {
+  const cursor = new Date(`${date}T00:00:00Z`);
+
+  for (let offset = 0; offset < 14; offset += 1) {
+    const key = cursor.toISOString().slice(0, 10);
+    const value = prices.get(key);
+    if (Number.isFinite(value)) {
+      return { date: key, value };
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  throw new Error(`No price found within 14 days of ${date}`);
+}
+
+function getMonthRange(start, end) {
+  const months = [];
+  let [year, month] = start.split("-").map(Number);
+  const [endYear, endMonth] = end.split("-").map(Number);
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    months.push(`${year}-${String(month).padStart(2, "0")}`);
+    month += 1;
+    if (month === 13) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  return months;
+}
+
+function extractLegacyDates() {
+  const text = readFileSync(eventsPath, "utf8");
+  return [...new Set([...text.matchAll(/"date":\s*"(\d{4}-\d{2}-\d{2})"/g)].map((match) => match[1]))];
+}
+
+function buildSupplementalSeeds() {
+  return supplementalMonthlyHeadlines.map((event) => ({
+    id: `${event.date}-${slugify(event.headline)}`,
+    ...event,
+  }));
+}
+
+function verifyCoverage(legacyDates, supplementalSeeds) {
+  const months = new Set([...legacyDates, ...supplementalSeeds.map((event) => event.date)].map((date) => date.slice(0, 7)));
+  const missing = getMonthRange("1987-10", "2007-10").filter((month) => !months.has(month));
+
+  if (missing.length > 0) {
+    throw new Error(`Missing headline months: ${missing.join(", ")}`);
+  }
+}
+
+function serialize(value) {
+  return JSON.stringify(value, null, 2).replace(/\n/g, "\n");
+}
+
+async function main() {
+  const supplementalSeeds = buildSupplementalSeeds();
+  const legacyDates = extractLegacyDates();
+  verifyCoverage(legacyDates, supplementalSeeds);
+
+  const [sp500Text, goldRows] = await Promise.all([
+    fetch(priceSources.sp500).then((response) => response.text()),
+    fetch(priceSources.gold).then((response) => response.json()),
+  ]);
+
+  const sp500Prices = parseSp500Csv(sp500Text);
+  const goldPrices = parseGoldJson(goldRows);
+  const priceDates = [...new Set([...legacyDates, ...supplementalSeeds.map((event) => event.date), periodEndDate])].sort();
+  const monthlyMarketPrices = Object.fromEntries(
+    priceDates.map((date) => {
+      const sp500 = nextAvailablePrice(sp500Prices, date);
+      const gold = nextAvailablePrice(goldPrices, date);
+      return [
+        date,
+        {
+          sp500: Number(sp500.value.toFixed(2)),
+          sp500Date: sp500.date,
+          gold: Number(gold.value.toFixed(2)),
+          goldDate: gold.date,
+        },
+      ];
+    }),
+  );
+
+  const output = `/* Generated by scripts/build-headline-monthly-expansion.mjs. */\n\nexport interface SupplementalHeadlineSeed {\n  id: string;\n  date: string;\n  era: string;\n  headline: string;\n  deck: string;\n  dateline: string;\n  article: string;\n  facts: string[];\n  major?: boolean;\n}\n\nexport interface MonthlyMarketPricePoint {\n  sp500: number;\n  sp500Date: string;\n  gold: number;\n  goldDate: string;\n}\n\nexport const monthlyExpansionSources = ${serialize(priceSources)} as const;\n\nexport const supplementalMonthlyHeadlines = ${serialize(supplementalSeeds)} satisfies SupplementalHeadlineSeed[];\n\nexport const monthlyMarketPrices = ${serialize(monthlyMarketPrices)} satisfies Record<string, MonthlyMarketPricePoint>;\n`;
+
+  writeFileSync(outputPath, output);
+  console.log(`Wrote ${supplementalSeeds.length} supplemental headlines and ${priceDates.length} price points to ${outputPath}.`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
