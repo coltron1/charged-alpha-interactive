@@ -600,9 +600,10 @@ function SectorSelectedAllocationBanner({
   const visibleTax = marketVisionUnlocked && outcome.tax > 0.5;
   const selectedTone = marketVisionUnlocked ? getOutcomeTone(outcome.returnPercent) : "neutral";
   const actionLabel = getSectorActionLabel(game, outcome);
+  const lockedTaxLabel = game.results.length === 0 ? "No starting tax" : outcome.switched ? "Tax if gains" : "No trade tax";
   const allocationSummary = marketVisionUnlocked
     ? `In ${formatSectorMoneyCompact(outcome.startingBankroll)} · End ${formatSectorMoneyCompact(outcome.endingBankroll)} · Tax ${formatSectorMoneyCompact(outcome.tax)}`
-    : `In ${formatSectorMoneyCompact(outcome.startingBankroll)} · ${outcome.switched ? "Tax if gains" : "No trade tax"} · Result after play`;
+    : `In ${formatSectorMoneyCompact(outcome.startingBankroll)} · ${lockedTaxLabel} · Result after play`;
   const style = {
     "--bill-from": `${getSectorFlowPosition(sourceChoice)}%`,
     "--bill-to": `${getSectorFlowPosition(destinationChoice)}%`,
