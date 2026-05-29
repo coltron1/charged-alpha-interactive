@@ -44,6 +44,33 @@ function getGuideRect(element: Element): GuideRect {
   };
 }
 
+function areGuideRectsEqual(a?: GuideRect, b?: GuideRect) {
+  if (!a || !b) {
+    return a === b;
+  }
+  return (
+    Math.abs(a.x - b.x) < 0.5 &&
+    Math.abs(a.y - b.y) < 0.5 &&
+    Math.abs(a.width - b.width) < 0.5 &&
+    Math.abs(a.height - b.height) < 0.5
+  );
+}
+
+function areGuideLayoutsEqual(
+  a: { rects: Record<string, GuideRect>; viewport: { width: number; height: number } },
+  b: { rects: Record<string, GuideRect>; viewport: { width: number; height: number } },
+) {
+  if (a.viewport.width !== b.viewport.width || a.viewport.height !== b.viewport.height) {
+    return false;
+  }
+  const aKeys = Object.keys(a.rects);
+  const bKeys = Object.keys(b.rects);
+  if (aKeys.length !== bKeys.length) {
+    return false;
+  }
+  return bKeys.every((key) => areGuideRectsEqual(a.rects[key], b.rects[key]));
+}
+
 function getRectCenter(rect: GuideRect) {
   return {
     x: rect.x + rect.width / 2,
@@ -250,6 +277,8 @@ export function TargetGuideOverlay({
   }, [startGuide]);
 
   useEffect(() => {
+    let frame = 0;
+
     const measure = () => {
       const rects: Record<string, GuideRect> = {};
       guideItems.forEach((item) => {
@@ -260,21 +289,34 @@ export function TargetGuideOverlay({
           }
         });
       });
-      setGuideLayout({
+      const nextLayout = {
         rects,
         viewport: { width: window.innerWidth, height: window.innerHeight },
+      };
+      setGuideLayout((currentLayout) => (areGuideLayoutsEqual(currentLayout, nextLayout) ? currentLayout : nextLayout));
+    };
+
+    const scheduleMeasure = () => {
+      if (frame) {
+        return;
+      }
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measure();
       });
     };
 
     measure();
-    const frame = window.requestAnimationFrame(measure);
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
+    scheduleMeasure();
+    window.addEventListener("resize", scheduleMeasure);
+    window.addEventListener("scroll", scheduleMeasure, true);
 
     return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener("resize", scheduleMeasure);
+      window.removeEventListener("scroll", scheduleMeasure, true);
     };
   }, [guideItems]);
 

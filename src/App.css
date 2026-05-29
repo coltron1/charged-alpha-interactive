@@ -28283,6 +28283,14 @@ button.has-tooltip:disabled {
   width: 184px;
 }
 
+.dashboard-guide-live .storybook-dashboard-guide-arrows line,
+.dashboard-guide-live .storybook-dashboard-guide-spot,
+.dashboard-guide-live .storybook-dashboard-guide-start-hint,
+.dashboard-guide-live .storybook-dashboard-guide-start {
+  animation: none !important;
+  transition: none;
+}
+
 @media (min-width: 900px) and (orientation: landscape) {
   .dashboard-guide-live .storybook-dashboard-callout {
     width: 206px;
