@@ -48,6 +48,17 @@ export const dashboardGuideItems: DashboardGuideItem[] = [
     variant: "primary",
   },
   {
+    target: "chapter-index",
+    title: "Chapter Index",
+    body: "Open the wheel to browse future front pages by year, expand a year, read a page, or play that date.",
+    placement: "top",
+    nudge: { x: 32, y: -10 },
+    mobilePlacement: "top",
+    mobileNudge: { x: 48, y: -12 },
+    widePlacement: "left",
+    wideNudge: { x: 8, y: -4 },
+  },
+  {
     target: "journal",
     title: "Journal",
     body: "Optional story context. Read Jonah's life between the front pages.",

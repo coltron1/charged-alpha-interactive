@@ -162,11 +162,15 @@ type LeaderboardRow = {
 type ChargedAlphaUser = {
   authenticated: boolean;
   email?: string;
+  firstName?: string;
+  loginUrl?: string;
   name?: string;
+  registerUrl?: string;
 };
 
 const marketHeatQuietBand = 0.75;
 const timeReelDurationMs = 4000;
+const chargedAlphaGamePath = "/games/front-page-fortune";
 const leaderboardStorageKey = "front-page-fortune-leaderboard-v1";
 const leaderboardGameSlug = "front-page-fortune";
 const leaderboardMaxEntries = 50;
@@ -548,10 +552,10 @@ function getNeutralMarketHeats() {
 }
 
 function getMarketHeatUnlockDate(game: HeadlineMarketState) {
-  const unlockDate = new Date(`${game.timeline.inheritanceDate}T00:00:00Z`);
-  unlockDate.setUTCFullYear(unlockDate.getUTCFullYear() + 10);
+  const unlockDate = new Date(`${game.timeline.periodEndDate}T00:00:00Z`);
+  unlockDate.setUTCFullYear(unlockDate.getUTCFullYear() - 5);
   const unlockDateIso = formatDateIso(unlockDate);
-  return dateToUtcTime(unlockDateIso) > dateToUtcTime(game.timeline.periodEndDate) ? game.timeline.periodEndDate : unlockDateIso;
+  return dateToUtcTime(unlockDateIso) < dateToUtcTime(game.timeline.inheritanceDate) ? game.timeline.inheritanceDate : unlockDateIso;
 }
 
 function isMarketHeatUnlockedForDate(game: HeadlineMarketState, date: string) {
@@ -696,6 +700,19 @@ function isValidLeaderboardEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function getChargedAlphaAccountUrl(kind: "login" | "register", user: ChargedAlphaUser | null) {
+  const fallback = `/auth/${kind}?next=${encodeURIComponent(chargedAlphaGamePath)}`;
+  return (kind === "login" ? user?.loginUrl : user?.registerUrl) || fallback;
+}
+
+function getChargedAlphaFirstName(user: ChargedAlphaUser | null) {
+  if (!user?.authenticated) {
+    return "";
+  }
+  const candidate = user.firstName || user.name?.split(/\s+/)[0] || user.email?.split("@")[0] || "";
+  return sanitizeLeaderboardName(candidate) || "Player";
+}
+
 function createLeaderboardEntry(game: HeadlineMarketState, name: string, email: string): LeaderboardEntry {
   const taxPaid = game.results.reduce((total, result) => total + result.taxPenalty, 0);
   return {
@@ -736,7 +753,7 @@ function addLeaderboardEntry(entry: LeaderboardEntry) {
 }
 
 async function fetchChargedAlphaUser(): Promise<ChargedAlphaUser | null> {
-  const response = await fetch("/auth/api/me", { credentials: "same-origin" });
+  const response = await fetch(`/auth/api/me?next=${encodeURIComponent(chargedAlphaGamePath)}`, { credentials: "same-origin" });
   if (!response.ok) {
     return null;
   }
@@ -755,7 +772,6 @@ async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[] | null> {
 async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<LeaderboardEntry> {
   const response = await fetch("/games/api/scores", {
     body: JSON.stringify({
-      display_name: entry.name,
       game_slug: leaderboardGameSlug,
       metadata: {
         source: "front-page-fortune",
@@ -771,11 +787,23 @@ async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<Leaderboar
     method: "POST",
   });
 
+  const payload = (await response.json().catch(() => ({}))) as {
+    entry?: unknown;
+    error?: string;
+    login_url?: string;
+    register_url?: string;
+  };
+
   if (!response.ok) {
-    throw new Error("Score was not accepted.");
+    const error = new Error(payload.error || "Score was not accepted.");
+    Object.assign(error, {
+      loginUrl: payload.login_url,
+      registerUrl: payload.register_url,
+      status: response.status,
+    });
+    throw error;
   }
 
-  const payload = (await response.json()) as { entry?: unknown };
   if (!isLeaderboardEntry(payload.entry)) {
     throw new Error("Score response was incomplete.");
   }
@@ -3193,6 +3221,10 @@ function FinalLeaderboardOverlay({
   const previewEntry = submittedEntry ?? getLeaderboardPreviewEntry(game);
   const rows = getLeaderboardRows(game, entries, previewEntry);
   const previewRank = rows.findIndex((row) => row.id === previewEntry.id || (submittedEntry && row.id === submittedEntry.id)) + 1;
+  const accountFirstName = getChargedAlphaFirstName(chargedAlphaUser);
+  const mustSignInForPublicScore = serverLeaderboardAvailable && !chargedAlphaUser?.authenticated;
+  const loginUrl = getChargedAlphaAccountUrl("login", chargedAlphaUser);
+  const registerUrl = getChargedAlphaAccountUrl("register", chargedAlphaUser);
 
   useEffect(() => {
     let cancelled = false;
@@ -3215,7 +3247,8 @@ function FinalLeaderboardOverlay({
         if (!cancelled && user) {
           setChargedAlphaUser(user);
           if (user.authenticated) {
-            setPlayerName((current) => current || user.name || user.email?.split("@")[0] || "");
+            const firstName = getChargedAlphaFirstName(user);
+            setPlayerName((current) => current || firstName);
             setEmail((current) => current || user.email || "");
           }
         }
@@ -3240,11 +3273,11 @@ function FinalLeaderboardOverlay({
       setFormMessage("This run is already posted.");
       return;
     }
-    if (serverLeaderboardAvailable && chargedAlphaUser && !chargedAlphaUser.authenticated) {
-      setFormMessage("Sign in to Charged Alpha to post this score to the public leaderboard.");
+    if (mustSignInForPublicScore) {
+      setFormMessage("Create or sign in to a free Charged Alpha account to post this public score.");
       return;
     }
-    if (cleanName.length < 2) {
+    if (!chargedAlphaUser?.authenticated && cleanName.length < 2) {
       setFormMessage("Enter a display name.");
       return;
     }
@@ -3253,7 +3286,7 @@ function FinalLeaderboardOverlay({
       return;
     }
 
-    const entry = createLeaderboardEntry(game, cleanName, cleanEmail);
+    const entry = createLeaderboardEntry(game, chargedAlphaUser?.authenticated ? accountFirstName : cleanName, cleanEmail);
     setPostingScore(true);
     try {
       if (serverLeaderboardAvailable && chargedAlphaUser?.authenticated) {
@@ -3273,8 +3306,8 @@ function FinalLeaderboardOverlay({
         returnPercent: entry.returnPercent,
         moves: entry.moves,
       });
-    } catch {
-      setFormMessage("Score posting failed. Try again after signing in.");
+    } catch (error) {
+      setFormMessage(error instanceof Error ? error.message : "Score posting failed. Try again after signing in.");
     } finally {
       setPostingScore(false);
     }
@@ -3299,40 +3332,71 @@ function FinalLeaderboardOverlay({
             <strong>{formatMoney(game.bankroll)}</strong>
             <em>{formatPercent(getStartingGain(game.bankroll))} over 20 years</em>
           </div>
-          <form onSubmit={submitScore}>
-            <label>
-              <span>Name</span>
-              <input
-                type="text"
-                autoComplete="name"
-                value={playerName}
-                onChange={(event) => setPlayerName(event.target.value)}
-                placeholder="Your name"
-                disabled={Boolean(submittedEntry)}
-                maxLength={24}
-              />
-            </label>
-            <label>
-              <span>Email</span>
-              <input
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                disabled={Boolean(submittedEntry) || Boolean(chargedAlphaUser?.authenticated)}
-                maxLength={80}
-              />
-            </label>
-            <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry) || postingScore}>
-              <Send size={16} />
-              {submittedEntry ? "Score Posted" : postingScore ? "Posting..." : "Post Score"}
-            </button>
+          <form
+            className={`${chargedAlphaUser?.authenticated ? "account-ready" : ""} ${mustSignInForPublicScore ? "account-required" : ""}`}
+            onSubmit={submitScore}
+          >
+            {chargedAlphaUser?.authenticated ? (
+              <div className="storybook-leaderboard-account-card">
+                <span>Posting as</span>
+                <strong>{accountFirstName}</strong>
+                <em>{chargedAlphaUser.email}</em>
+              </div>
+            ) : mustSignInForPublicScore ? (
+              <div className="storybook-leaderboard-auth-card">
+                <span>Free account required</span>
+                <strong>Save this run publicly</strong>
+                <em>Use your Charged Alpha account to post scores and keep game progress.</em>
+                <div>
+                  <a className="primary-action legacy-primary" href={registerUrl}>
+                    Create Account
+                  </a>
+                  <a className="secondary-action compact" href={loginUrl}>
+                    Sign In
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label>
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    value={playerName}
+                    onChange={(event) => setPlayerName(event.target.value)}
+                    placeholder="Your name"
+                    disabled={Boolean(submittedEntry)}
+                    maxLength={24}
+                  />
+                </label>
+                <label>
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    disabled={Boolean(submittedEntry)}
+                    maxLength={80}
+                  />
+                </label>
+              </>
+            )}
+            {!mustSignInForPublicScore && (
+              <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry) || postingScore}>
+                <Send size={16} />
+                {submittedEntry ? "Score Posted" : postingScore ? "Posting..." : "Post Score"}
+              </button>
+            )}
           </form>
           <p>
             {formMessage ||
               (serverLeaderboardAvailable
-                ? "Public scores are tied to your Charged Alpha account."
+                ? chargedAlphaUser?.authenticated
+                  ? "Public scores use your Charged Alpha first name."
+                  : "Create or sign in to post this score publicly."
                 : "Standalone scores are stored on this device.")}
           </p>
         </section>

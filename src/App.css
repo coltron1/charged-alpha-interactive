@@ -14154,10 +14154,60 @@ button.has-tooltip:disabled {
   align-items: end;
 }
 
+.storybook-leaderboard-submit form.account-ready {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.storybook-leaderboard-submit form.account-required {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .storybook-leaderboard-submit label {
   min-width: 0;
   display: grid;
   gap: 4px;
+}
+
+.storybook-leaderboard-account-card,
+.storybook-leaderboard-auth-card {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(246, 210, 117, 0.22);
+  border-radius: 11px;
+  padding: 10px 12px;
+  background: rgba(3, 7, 6, 0.36);
+}
+
+.storybook-leaderboard-account-card strong,
+.storybook-leaderboard-auth-card strong {
+  color: #fff8e8;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.storybook-leaderboard-account-card em,
+.storybook-leaderboard-auth-card em {
+  min-width: 0;
+  overflow: hidden;
+  color: #d9ccb4;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storybook-leaderboard-auth-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.storybook-leaderboard-auth-card a {
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .storybook-leaderboard-submit input {
@@ -15435,6 +15485,11 @@ button.has-tooltip:disabled {
   .storybook-leaderboard-submit form {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .storybook-leaderboard-submit form.account-ready,
+  .storybook-leaderboard-submit form.account-required {
+    grid-template-columns: 1fr;
   }
 
   .storybook-leaderboard-submit input,
@@ -24133,8 +24188,10 @@ button.has-tooltip:disabled {
 
 .storybook-chapter-page {
   width: min(1040px, 100%);
+  height: min(900px, calc(100svh - 20px));
   max-height: min(900px, calc(100svh - 20px));
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
   overflow: hidden;
   border-color: rgba(245, 205, 116, 0.78);
@@ -24393,7 +24450,9 @@ button.has-tooltip:disabled {
   }
 
   .storybook-chapter-page {
+    height: calc(100svh - 16px);
     max-height: calc(100svh - 16px);
+    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 8px;
     padding: 10px;
   }
@@ -28283,6 +28342,14 @@ button.has-tooltip:disabled {
   width: 184px;
 }
 
+.dashboard-guide-live .storybook-dashboard-callout.chapter-index {
+  width: 218px;
+}
+
+.dashboard-guide-live .storybook-dashboard-guide-spot.chapter-index {
+  border-radius: 999px;
+}
+
 .dashboard-guide-live .storybook-dashboard-guide-arrows line,
 .dashboard-guide-live .storybook-dashboard-guide-spot,
 .dashboard-guide-live .storybook-dashboard-guide-start-hint,
@@ -28310,6 +28377,10 @@ button.has-tooltip:disabled {
   .dashboard-guide-live .storybook-dashboard-callout.journal,
   .dashboard-guide-live .storybook-dashboard-callout.ledger-button {
     width: 186px;
+  }
+
+  .dashboard-guide-live .storybook-dashboard-callout.chapter-index {
+    width: 202px;
   }
 
   .dashboard-guide-live .storybook-dashboard-callout strong {
@@ -28355,6 +28426,10 @@ button.has-tooltip:disabled {
     width: 148px;
   }
 
+  .dashboard-guide-live .storybook-dashboard-callout.chapter-index {
+    width: 152px;
+  }
+
   .dashboard-guide-live .storybook-dashboard-callout strong {
     font-size: 9.6px;
     line-height: 1.05;
@@ -28398,6 +28473,10 @@ button.has-tooltip:disabled {
   .dashboard-guide-live .storybook-dashboard-callout.journal,
   .dashboard-guide-live .storybook-dashboard-callout.ledger-button {
     width: 136px;
+  }
+
+  .dashboard-guide-live .storybook-dashboard-callout.chapter-index {
+    width: 142px;
   }
 
   .dashboard-guide-live .storybook-dashboard-callout strong {
