@@ -30012,6 +30012,15 @@ button.has-tooltip:disabled {
   white-space: nowrap;
 }
 
+.sector-oracle-timeline-context span b {
+  color: var(--oracle-brass-bright);
+}
+
+.sector-oracle-timeline-context span i {
+  color: rgba(246, 236, 210, 0.44);
+  font-style: normal;
+}
+
 .sector-oracle-timeline-track {
   position: relative;
   height: 34px;
@@ -30053,6 +30062,53 @@ button.has-tooltip:disabled {
   top: 22px;
   left: var(--tick-progress);
   transform: translateX(-50%);
+}
+
+.sector-oracle-pin-date {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  max-width: 116px;
+  gap: 4px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 215, 118, 0.32);
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: rgba(255, 248, 224, 0.9);
+  background:
+    linear-gradient(180deg, rgba(255, 232, 161, 0.12), rgba(255, 232, 161, 0.03)),
+    rgba(3, 10, 8, 0.88);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.26);
+  font-size: 8px;
+  font-weight: 1000;
+  line-height: 1;
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.sector-oracle-pin-date b {
+  color: var(--oracle-brass-bright);
+}
+
+.sector-oracle-pin-date em {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(246, 236, 210, 0.78);
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sector-oracle-pin-date.current {
+  top: 4px;
+  left: clamp(52px, var(--oracle-current-progress), calc(100% - 52px));
+}
+
+.sector-oracle-pin-date.target {
+  bottom: 4px;
+  left: clamp(52px, var(--oracle-target-progress), calc(100% - 52px));
 }
 
 .sector-oracle-timeline-base,
@@ -31865,10 +31921,11 @@ button.has-tooltip:disabled {
 }
 
 .sector-oracle-one-screen {
-  align-self: start;
-  align-content: start;
+  height: 100%;
+  align-self: stretch;
+  align-content: stretch;
   grid-template-columns: 1fr;
-  grid-template-rows: clamp(220px, 31svh, 292px) max-content;
+  grid-template-rows: clamp(220px, 31svh, 292px) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -32046,9 +32103,10 @@ button.has-tooltip:disabled {
 .sector-oracle-decision-console {
   grid-column: 1;
   grid-row: 2;
-  grid-template-rows: max-content max-content max-content max-content max-content;
+  min-height: 0;
+  grid-template-rows: max-content max-content max-content max-content minmax(106px, 1fr);
   gap: 6px;
-  align-content: start;
+  align-content: stretch;
   padding: 8px;
 }
 
@@ -32057,15 +32115,27 @@ button.has-tooltip:disabled {
 }
 
 .sector-oracle-timeline-track {
-  height: 28px;
+  height: 52px;
+}
+
+.sector-oracle-timeline-base,
+.sector-oracle-timeline-jump {
+  top: 24px;
+  bottom: auto;
+  height: 5px;
+}
+
+.sector-oracle-progress-endcap {
+  top: 7px;
 }
 
 .sector-oracle-year-tick {
-  top: 19px;
+  top: 39px;
 }
 
 .sector-oracle-current-pin,
 .sector-oracle-target-pin {
+  top: 26px;
   width: 24px;
   height: 24px;
 }
@@ -32138,6 +32208,10 @@ button.has-tooltip:disabled {
   grid-template-columns: minmax(0, 1fr) minmax(48px, auto);
 }
 
+.sector-oracle-play-stack.vision-locked {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .sector-oracle-date-advance {
   height: 44px;
   min-height: 44px;
@@ -32169,6 +32243,18 @@ button.has-tooltip:disabled {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 5px;
   overflow: visible;
+}
+
+.sector-oracle-allocation-strip.vision-locked .sector-oracle-allocation-choice::before {
+  opacity: 0;
+}
+
+.sector-oracle-allocation-strip.vision-locked .sector-oracle-allocation-choice span {
+  color: rgba(246, 236, 210, 0.78);
+}
+
+.sector-oracle-allocation-strip.vision-locked .sector-oracle-allocation-choice.active span {
+  color: var(--oracle-green);
 }
 
 .sector-oracle-allocation-choice {
@@ -32215,6 +32301,13 @@ button.has-tooltip:disabled {
   grid-template-columns: minmax(0, 1fr) minmax(170px, 0.3fr);
   gap: 6px;
   padding: 5px 7px;
+}
+
+.sector-oracle-selected-allocation.vision-locked {
+  border-color: rgba(226, 190, 111, 0.24);
+  background:
+    linear-gradient(90deg, rgba(255, 232, 161, 0.07), rgba(28, 96, 67, 0.1), rgba(255, 232, 161, 0.04)),
+    rgba(4, 13, 10, 0.48);
 }
 
 .sector-oracle-flow-stops {
@@ -32265,15 +32358,17 @@ button.has-tooltip:disabled {
 }
 
 .sector-oracle-headline-pop {
+  min-height: 0;
   gap: 4px;
-  align-self: start;
+  align-self: stretch;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .sector-oracle-headline-deck {
   --headline-card-step: 34px;
-  height: 106px;
+  height: 100%;
   min-height: 106px;
-  max-height: 106px;
+  max-height: none;
   border-radius: 8px;
 }
 
@@ -32453,7 +32548,7 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-one-screen {
-    grid-template-rows: clamp(214px, 30svh, 278px) max-content;
+    grid-template-rows: clamp(214px, 30svh, 278px) minmax(0, 1fr);
   }
 
   .sector-oracle-selected-page {
@@ -32475,7 +32570,7 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-one-screen {
-    grid-template-rows: clamp(252px, 35svh, 320px) max-content;
+    grid-template-rows: clamp(252px, 35svh, 320px) minmax(0, 1fr);
     gap: 5px;
   }
 
@@ -32557,7 +32652,7 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-decision-console {
-    grid-template-rows: max-content max-content max-content max-content max-content;
+    grid-template-rows: max-content max-content max-content max-content minmax(91px, 1fr);
     gap: 5px;
     padding: 6px;
   }
@@ -32567,13 +32662,37 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-timeline-track {
-    height: 22px;
+    height: 40px;
+  }
+
+  .sector-oracle-timeline-base,
+  .sector-oracle-timeline-jump {
+    top: 18px;
+    height: 4px;
   }
 
   .sector-oracle-current-pin,
   .sector-oracle-target-pin {
+    top: 20px;
     width: 20px;
     height: 20px;
+  }
+
+  .sector-oracle-pin-date {
+    max-width: 78px;
+    gap: 3px;
+    padding: 2px 4px;
+    font-size: 6.5px;
+  }
+
+  .sector-oracle-pin-date.current {
+    top: 2px;
+    left: clamp(38px, var(--oracle-current-progress), calc(100% - 38px));
+  }
+
+  .sector-oracle-pin-date.target {
+    bottom: 2px;
+    left: clamp(38px, var(--oracle-target-progress), calc(100% - 38px));
   }
 
   .sector-oracle-console-controls {
@@ -32725,9 +32844,9 @@ button.has-tooltip:disabled {
 
   .sector-oracle-headline-deck {
     --headline-card-step: 29px;
-    height: 91px;
+    height: 100%;
     min-height: 91px;
-    max-height: 91px;
+    max-height: none;
   }
 
   .sector-oracle-headline-card-button {
@@ -32817,7 +32936,7 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-one-screen {
-    grid-template-rows: clamp(214px, 34svh, 238px) max-content;
+    grid-template-rows: clamp(214px, 34svh, 238px) minmax(0, 1fr);
   }
 
   .sector-oracle-preview-ticket {
@@ -32825,11 +32944,34 @@ button.has-tooltip:disabled {
   }
 
   .sector-oracle-decision-console {
-    grid-template-rows: max-content max-content max-content max-content max-content;
+    grid-template-rows: max-content max-content max-content max-content minmax(82px, 1fr);
   }
 
   .sector-oracle-timeline-track {
-    height: 20px;
+    height: 34px;
+  }
+
+  .sector-oracle-timeline-base,
+  .sector-oracle-timeline-jump {
+    top: 15px;
+  }
+
+  .sector-oracle-current-pin,
+  .sector-oracle-target-pin {
+    top: 17px;
+  }
+
+  .sector-oracle-pin-date {
+    max-width: 68px;
+    font-size: 5.8px;
+  }
+
+  .sector-oracle-pin-date.current {
+    left: clamp(34px, var(--oracle-current-progress), calc(100% - 34px));
+  }
+
+  .sector-oracle-pin-date.target {
+    left: clamp(34px, var(--oracle-target-progress), calc(100% - 34px));
   }
 
   .sector-oracle-selected-date-chip {
@@ -32860,9 +33002,9 @@ button.has-tooltip:disabled {
 
   .sector-oracle-headline-deck {
     --headline-card-step: 26px;
-    height: 82px;
+    height: 100%;
     min-height: 82px;
-    max-height: 82px;
+    max-height: none;
   }
 
   .sector-oracle-headline-track {

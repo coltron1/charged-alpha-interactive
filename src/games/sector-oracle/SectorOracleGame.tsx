@@ -197,6 +197,20 @@ function getSectorDateParts(date: string) {
   };
 }
 
+function getSectorMarketVisionUnlockDate() {
+  const unlock = new Date(`${sectorOracleEndDate}T00:00:00Z`);
+  unlock.setUTCFullYear(unlock.getUTCFullYear() - 5);
+  return unlock.toISOString().slice(0, 10);
+}
+
+function getSectorCurrentDate(game: Pick<SectorOracleState, "currentIndex" | "events">) {
+  return game.events[game.currentIndex]?.date ?? sectorOracleStartDate;
+}
+
+function isSectorMarketVisionUnlocked(game: Pick<SectorOracleState, "currentIndex" | "events">) {
+  return dateToUtcTime(getSectorCurrentDate(game)) >= dateToUtcTime(getSectorMarketVisionUnlockDate());
+}
+
 function clampSectorTargetIndex(game: SectorOracleState, index: number) {
   return Math.max(Math.min(game.currentIndex + 1, game.events.length), Math.min(index, game.events.length));
 }
@@ -478,8 +492,8 @@ function SectorTimelineRail({ game, onSelectTarget }: { game: SectorOracleState;
   return (
     <section className="sector-oracle-timeline-rail" aria-label="Sector Oracle timeline" style={style} data-guide-target="sector-timeline">
       <div className="sector-oracle-timeline-context">
-        <strong>{currentEvent.era}</strong>
-        <span>{formatSectorDate(currentEvent.date)} to {formatSectorDate(target.date)}</span>
+        <strong>Timeline</strong>
+        <span><b>Current</b> {formatSectorDate(currentEvent.date)} <i aria-hidden="true">to</i> <b>Target</b> {formatSectorDate(target.date)}</span>
       </div>
       <div
         className={`sector-oracle-timeline-track ${isScrubbing ? "scrubbing" : ""}`}
@@ -509,6 +523,8 @@ function SectorTimelineRail({ game, onSelectTarget }: { game: SectorOracleState;
             {tick.label}
           </b>
         ))}
+        <span className="sector-oracle-pin-date current"><b>Now</b><em>{formatSectorDate(currentEvent.date)}</em></span>
+        <span className="sector-oracle-pin-date target"><b>Target</b><em>{formatSectorDate(target.date)}</em></span>
         <span className="sector-oracle-current-pin"><Sparkles size={13} /></span>
         <span className="sector-oracle-target-pin"><ChevronRight size={13} /></span>
       </div>
@@ -518,25 +534,28 @@ function SectorTimelineRail({ game, onSelectTarget }: { game: SectorOracleState;
 
 function SectorAllocationStrip({
   game,
+  marketVisionUnlocked,
   onChoose,
   outcomes,
 }: {
   game: SectorOracleState;
+  marketVisionUnlocked: boolean;
   onChoose: (choice: SectorChoice) => void;
   outcomes: Record<SectorChoice, SectorOracleOutcome>;
 }) {
   const previousChoice = game.results.at(-1)?.choice ?? "balanced";
-  const bestChoice = getBestChoice(outcomes);
+  const bestChoice = marketVisionUnlocked ? getBestChoice(outcomes) : null;
 
   return (
-    <div className="sector-oracle-allocation-strip" aria-label="Choose sector allocation" data-guide-target="sector-allocation">
+    <div className={`sector-oracle-allocation-strip ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"}`} aria-label="Choose sector allocation" data-guide-target="sector-allocation">
       {sectorChoiceOrder.map((choice) => {
         const Icon = sectorIcons[choice];
         const outcome = outcomes[choice];
-        const tone = getOutcomeTone(outcome.returnPercent);
-        const alpha = Math.min(0.72, 0.12 + Math.abs(outcome.returnPercent) / 95);
+        const tone = marketVisionUnlocked ? getOutcomeTone(outcome.returnPercent) : "neutral";
+        const alpha = marketVisionUnlocked ? Math.min(0.72, 0.12 + Math.abs(outcome.returnPercent) / 95) : 0;
         const active = game.choice === choice;
         const previous = game.results.length > 0 && previousChoice === choice;
+        const taxLabel = previous ? "No trade" : game.results.length > 0 ? "Tax if gains" : "No tax";
         return (
           <button
             key={choice}
@@ -544,14 +563,18 @@ function SectorAllocationStrip({
             style={{ "--sector-heat": alpha } as CSSProperties}
             type="button"
             aria-pressed={active}
-            aria-label={`${sectorChoiceLabels[choice]} projects ${formatSectorMoney(outcome.endingBankroll)} with ${formatSectorMoney(outcome.tax)} tax`}
+            aria-label={
+              marketVisionUnlocked
+                ? `${sectorChoiceLabels[choice]} projects ${formatSectorMoney(outcome.endingBankroll)} with ${formatSectorMoney(outcome.tax)} tax`
+                : `${sectorChoiceLabels[choice]} allocation. Projected returns unlock in the final five years.`
+            }
             title={sectorChoiceDescriptions[choice]}
             onClick={() => onChoose(choice)}
           >
             <Icon size={16} aria-hidden="true" />
             <strong>{sectorChoiceShortLabels[choice]}</strong>
-            <span>{formatSectorMoneyCompact(outcome.endingBankroll)}</span>
-            <em>{outcome.tax > 0 ? `Tax ${formatSectorMoneyCompact(outcome.tax)}` : previous ? "No trade" : "No tax"}</em>
+            <span>{marketVisionUnlocked ? formatSectorMoneyCompact(outcome.endingBankroll) : active ? "Selected" : previous ? "Held" : "Choose"}</span>
+            <em>{marketVisionUnlocked ? (outcome.tax > 0 ? `Tax ${formatSectorMoneyCompact(outcome.tax)}` : previous ? "No trade" : "No tax") : taxLabel}</em>
           </button>
         );
       })}
@@ -561,10 +584,12 @@ function SectorAllocationStrip({
 
 function SectorSelectedAllocationBanner({
   game,
+  marketVisionUnlocked,
   outcome,
   pulseKey,
 }: {
   game: SectorOracleState;
+  marketVisionUnlocked: boolean;
   outcome: SectorOracleOutcome;
   pulseKey: number;
 }) {
@@ -572,9 +597,12 @@ function SectorSelectedAllocationBanner({
   const sourceChoice = game.results.length === 0 ? game.choice : previousChoice;
   const destinationChoice = game.choice;
   const isHolding = !outcome.switched || sourceChoice === destinationChoice;
-  const visibleTax = outcome.tax > 0.5;
-  const selectedTone = getOutcomeTone(outcome.returnPercent);
+  const visibleTax = marketVisionUnlocked && outcome.tax > 0.5;
+  const selectedTone = marketVisionUnlocked ? getOutcomeTone(outcome.returnPercent) : "neutral";
   const actionLabel = getSectorActionLabel(game, outcome);
+  const allocationSummary = marketVisionUnlocked
+    ? `In ${formatSectorMoneyCompact(outcome.startingBankroll)} · End ${formatSectorMoneyCompact(outcome.endingBankroll)} · Tax ${formatSectorMoneyCompact(outcome.tax)}`
+    : `In ${formatSectorMoneyCompact(outcome.startingBankroll)} · ${outcome.switched ? "Tax if gains" : "No trade tax"} · Result after play`;
   const style = {
     "--bill-from": `${getSectorFlowPosition(sourceChoice)}%`,
     "--bill-to": `${getSectorFlowPosition(destinationChoice)}%`,
@@ -584,8 +612,12 @@ function SectorSelectedAllocationBanner({
   return (
     <aside
       key={`sector-selected-allocation-${pulseKey}`}
-      className={`sector-oracle-selected-allocation ${selectedTone} ${visibleTax ? "has-tax" : "no-tax"} ${pulseKey > 0 ? "is-pulsing" : ""} ${isHolding ? "is-holding" : "is-moving"}`}
-      aria-label={`${actionLabel}: ${sectorChoiceLabels[destinationChoice]}, ${formatSectorMoney(outcome.startingBankroll)} invested, ${formatSectorMoney(outcome.tax)} tax, projected ${formatSectorMoney(outcome.endingBankroll)}.`}
+      className={`sector-oracle-selected-allocation ${selectedTone} ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"} ${visibleTax ? "has-tax" : "no-tax"} ${pulseKey > 0 ? "is-pulsing" : ""} ${isHolding ? "is-holding" : "is-moving"}`}
+      aria-label={
+        marketVisionUnlocked
+          ? `${actionLabel}: ${sectorChoiceLabels[destinationChoice]}, ${formatSectorMoney(outcome.startingBankroll)} invested, ${formatSectorMoney(outcome.tax)} tax, projected ${formatSectorMoney(outcome.endingBankroll)}.`
+          : `${actionLabel}: ${sectorChoiceLabels[destinationChoice]}, ${formatSectorMoney(outcome.startingBankroll)} invested. Result revealed after play.`
+      }
       style={style}
     >
       <div className="sector-oracle-flow-stops" aria-hidden="true">
@@ -617,9 +649,7 @@ function SectorSelectedAllocationBanner({
       </div>
       <div className="sector-oracle-allocation-copy">
         <span>{actionLabel} · {sectorChoiceLabels[destinationChoice]}</span>
-        <strong>
-          In {formatSectorMoneyCompact(outcome.startingBankroll)} · End {formatSectorMoneyCompact(outcome.endingBankroll)} · Tax {formatSectorMoneyCompact(outcome.tax)}
-        </strong>
+        <strong>{allocationSummary}</strong>
       </div>
     </aside>
   );
@@ -645,11 +675,12 @@ function SectorHeadlineSelector({
   const target = getSectorTarget(game, selectedIndex);
   const outcomes = getProjectedSectorOutcomes(game);
   const selectedOutcome = outcomes[game.choice];
-  const selectedTone = getOutcomeTone(selectedOutcome.returnPercent);
+  const marketVisionUnlocked = isSectorMarketVisionUnlocked(game);
+  const selectedTone = marketVisionUnlocked ? getOutcomeTone(selectedOutcome.returnPercent) : "neutral";
   const canMoveEarlier = selectedIndex > Math.min(game.currentIndex + 1, game.events.length);
   const canMoveLater = selectedIndex < game.events.length;
   const firstVisibleDeckIndex = game.currentIndex + Math.max(0, selectedIndex - game.currentIndex - 1);
-  const lastVisibleDeckIndex = firstVisibleDeckIndex + 3;
+  const lastVisibleDeckIndex = firstVisibleDeckIndex + 8;
   const headlineDeck = Array.from({ length: game.events.length - game.currentIndex + 1 }, (_, offset) => {
     const index = game.currentIndex + offset;
     const deckTarget = getSectorTarget(game, index);
@@ -763,8 +794,7 @@ function SectorHeadlineSelector({
   };
 
   return (
-    <section className="sector-oracle-decision-console" aria-label="Sector Oracle decision console">
-      <SectorTimelineRail game={game} onSelectTarget={onSelectTarget} />
+    <section className={`sector-oracle-decision-console ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"}`} aria-label="Sector Oracle decision console">
       <div className="sector-oracle-console-controls">
         <div className="sector-oracle-selected-date-chip" aria-live="polite">
           <span>{target.isFinal ? "Final tape selected" : "Selected future headline"}</span>
@@ -782,7 +812,7 @@ function SectorHeadlineSelector({
           </button>
         </div>
 
-        <div className="sector-oracle-play-stack">
+        <div className={`sector-oracle-play-stack ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"}`}>
           <button
             key={`sector-play-${pulseKey}`}
             className={`sector-oracle-primary sector-oracle-date-advance ${pulseKey > 0 ? "is-pulsing" : ""}`}
@@ -794,12 +824,13 @@ function SectorHeadlineSelector({
             <span>Play</span>
             <small>{sectorChoiceShortLabels[game.choice]} · {formatSectorMoneyCompact(selectedOutcome.startingBankroll)}</small>
           </button>
-          <em className={selectedTone}>{formatSectorPercent(selectedOutcome.returnPercent)}</em>
+          {marketVisionUnlocked && <em className={selectedTone}>{formatSectorPercent(selectedOutcome.returnPercent)}</em>}
         </div>
       </div>
 
-      <SectorAllocationStrip game={game} onChoose={onChoose} outcomes={outcomes} />
-      <SectorSelectedAllocationBanner game={game} outcome={selectedOutcome} pulseKey={pulseKey} />
+      <SectorAllocationStrip game={game} marketVisionUnlocked={marketVisionUnlocked} onChoose={onChoose} outcomes={outcomes} />
+      <SectorSelectedAllocationBanner game={game} marketVisionUnlocked={marketVisionUnlocked} outcome={selectedOutcome} pulseKey={pulseKey} />
+      <SectorTimelineRail game={game} onSelectTarget={onSelectTarget} />
 
       <article className="sector-oracle-headline-pop" aria-label="Scrollable future headline selector" data-guide-target="sector-headline">
         <div className="sector-oracle-deck-kicker">
@@ -874,7 +905,8 @@ function SectorHeadlinePreview({ game }: { game: SectorOracleState }) {
   const outcomes = getProjectedSectorOutcomes(game);
   const selected = outcomes[game.choice];
   const lastResult = game.results.at(-1);
-  const selectedTone = getOutcomeTone(selected.returnPercent);
+  const marketVisionUnlocked = isSectorMarketVisionUnlocked(game);
+  const selectedTone = marketVisionUnlocked ? getOutcomeTone(selected.returnPercent) : "neutral";
   const { image, status: imageStatus } = useSectorHeadlineImage(target.event);
   const article = target.event?.article;
   const imageStyle = image ? ({ "--sector-headline-image": `url("${image.url}")` } as CSSProperties) : undefined;
@@ -909,11 +941,13 @@ function SectorHeadlinePreview({ game }: { game: SectorOracleState }) {
           <strong>{sectorChoiceLabels[lastResult.choice]} {formatMoneyDelta(lastResult.profit)}</strong>
         </div>
       )}
-      <div className={`sector-oracle-preview-ticket ${selectedTone}`}>
-        <span>{sectorChoiceLabels[game.choice]}</span>
-        <strong>{formatSectorMoneyCompact(selected.endingBankroll)}</strong>
-        <em>{selected.tax > 0 ? `${formatSectorMoneyCompact(selected.tax)} tax` : "No tax drag"}</em>
-      </div>
+      {marketVisionUnlocked && (
+        <div className={`sector-oracle-preview-ticket ${selectedTone}`}>
+          <span>{sectorChoiceLabels[game.choice]}</span>
+          <strong>{formatSectorMoneyCompact(selected.endingBankroll)}</strong>
+          <em>{selected.tax > 0 ? `${formatSectorMoneyCompact(selected.tax)} tax` : "No tax drag"}</em>
+        </div>
+      )}
       {image && (
         <a className="sector-oracle-image-credit" href={image.pageUrl} target="_blank" rel="noreferrer">
           Image: {image.title}
