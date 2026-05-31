@@ -31,6 +31,7 @@ import {
   type LeaderboardSubmittedEntry,
   type ResultsChartPoint,
 } from "../../shared/game-ui/InvestmentResults";
+import { assetUrl } from "../../shared/assets";
 import { TargetGuideOverlay } from "../../shared/game-ui/TargetGuideOverlay";
 import {
   buildInterpolatedTimeJumpPoints,
@@ -1048,16 +1049,11 @@ function FuturesIntro({
       <section className={`storybook-book intro ${introPage} futures-intro-book`}>
         {introPage === "setup" ? (
           <article className="storybook-intro-page prologue futures-prologue">
-            <figure className="futures-prologue-art" aria-label="Chicago futures desk with future headline sheets">
-              <div className="futures-floor-board">
-                <span>CBOT</span>
-                <strong>HARVEST</strong>
-                <em>GRAIN TAPE</em>
-              </div>
-              <div className="futures-case">
-                <i />
-                <b>BELL ELEVATOR</b>
-              </div>
+            <figure className="storybook-prologue-art futures-prologue-art">
+              <img
+                src={assetUrl("games/futures-fortune/grain-ledger-prologue.webp")}
+                alt="Cartoon of Riley Bell holding a brass key beside her granddad's locked grain ledger in a rural grain elevator office."
+              />
             </figure>
             <div className="storybook-prologue-copy-panel">
               <p className="storybook-game-title">Harvest Ledger</p>
@@ -2037,8 +2033,9 @@ function FuturesLessonPopup({
 }) {
   return (
     <aside className={`futures-lesson-popup fullscreen ${lesson.tone}`} aria-label="Futures financial math" aria-modal="true" role="dialog">
-      <button type="button" onClick={onClose} aria-label="Close futures financial math">
+      <button className="futures-lesson-close" type="button" onClick={onClose} aria-label="Continue to the next headline">
         <X size={14} />
+        <span>Continue</span>
       </button>
       <div className="futures-lesson-inner">
         <header className="futures-lesson-header">
@@ -2257,14 +2254,18 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
           formatDateLong={formatDateLong}
           formatMoney={formatFuturesMoney}
           formatPercent={formatFuturesPercent}
+          gameSlug="harvest-ledger"
           gameTitle="Harvest Ledger"
+          moves={game.results.length}
           onClose={() => setLeaderboardOpen(false)}
           onSubmitted={setSubmittedScore}
           periodLabel="10 years"
+          reallocations={game.results.filter((result, index, results) => index > 0 && result.choice !== results[index - 1]?.choice).length}
           returnPercent={gainPercent}
           score={game.bankroll}
           storageKey="charged-alpha-futures-fortune-leaderboard"
           submittedEntry={submittedScore}
+          taxPaid={totalTaxPaid}
         />
       )}
     </main>

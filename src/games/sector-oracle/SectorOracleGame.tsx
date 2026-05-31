@@ -17,7 +17,6 @@ import {
   Shield,
   ShoppingBasket,
   Sparkles,
-  Telescope,
   Trophy,
   WalletCards,
 } from "lucide-react";
@@ -28,6 +27,9 @@ import type {
   WheelEvent as ReactWheelEvent,
 } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { assetUrl } from "../../shared/assets";
+import { InvestmentLeaderboardOverlay, type LeaderboardSubmittedEntry } from "../../shared/game-ui/InvestmentResults";
+import { TargetGuideOverlay, type DashboardGuideItem } from "../../shared/game-ui/TargetGuideOverlay";
 import {
   sectorChoiceDescriptions,
   sectorChoiceLabels,
@@ -40,6 +42,12 @@ import {
   type SectorChoice,
   type SectorOracleEvent,
 } from "./content/sectorOracleEvents";
+import {
+  sectorOracleCharacterName,
+  sectorOracleFinalJournalEntry,
+  sectorOracleJournalEntries,
+  sectorOraclePrologue,
+} from "./content/sectorOracleStory";
 import { fetchHeadlineImage, type HeadlineImageAsset } from "../headline-market/content/headlineImages";
 import {
   createSectorOracle,
@@ -66,7 +74,7 @@ import {
   type SectorOracleTarget,
 } from "./simulation/sectorOracle";
 
-type Overlay = "ledger" | "lesson" | null;
+type Overlay = "journal" | "ledger" | "lesson" | null;
 type SectorFlowStop = SectorChoice | "tax";
 type SectorReelEntry = {
   date: string;
@@ -106,6 +114,68 @@ type SectorReelTransition = {
 
 const sectorReelDurationMs = 3600;
 const sectorHeadlineImageCache = new Map<string, HeadlineImageAsset | null>();
+
+const sectorDashboardGuideItems: DashboardGuideItem[] = [
+  {
+    target: "timeline",
+    arrowTargets: ["front-page", "timeline", "headline-deck"],
+    arrowTargetNudges: { "front-page": { x: -18, y: 4 }, timeline: { y: -2 }, "headline-deck": { x: 30, y: -8 } },
+    title: "1. Pick Headline",
+    body: "Read the future article preview, then use the timeline or headline stack to choose where Nora jumps.",
+    placement: "bottom",
+    nudge: { x: 0, y: -34 },
+    mobilePlacement: "bottom",
+    mobileNudge: { x: 0, y: -40 },
+    widePlacement: "bottom",
+    wideNudge: { x: 0, y: -38 },
+    spotTargets: ["front-page", "timeline", "headline-deck"],
+  },
+  {
+    target: "allocation-buttons",
+    title: "2. Pick Sector",
+    body: "One sector holds through the jump. Switching later can owe tax.",
+    placement: "top",
+    nudge: { x: 0, y: 6 },
+    mobilePlacement: "top",
+    mobileNudge: { x: -20, y: 2 },
+    widePlacement: "left",
+    wideNudge: { x: 18, y: -4 },
+  },
+  {
+    target: "advance-game",
+    title: "3. Hit Play",
+    body: "Advance time and reveal returns, tax drag, and benchmarks.",
+    placement: "left",
+    nudge: { x: 12, y: 0 },
+    mobilePlacement: "top",
+    mobileNudge: { x: 54, y: -8 },
+    widePlacement: "bottom",
+    wideNudge: { x: 0, y: -28 },
+    variant: "primary",
+  },
+  {
+    target: "journal",
+    title: "Journal",
+    body: "Read Nora's pressroom entries between jumps.",
+    placement: "top",
+    nudge: { x: 4, y: -8 },
+    mobilePlacement: "top",
+    mobileNudge: { x: -22, y: -16 },
+    widePlacement: "top",
+    wideNudge: { x: 12, y: -10 },
+  },
+  {
+    target: "ledger-button",
+    title: "Ledger",
+    body: "Track bankroll, taxes, jumps, and benchmarks.",
+    placement: "top",
+    nudge: { x: 0, y: -8 },
+    mobilePlacement: "top",
+    mobileNudge: { x: 56, y: -16 },
+    widePlacement: "top",
+    wideNudge: { x: 20, y: -10 },
+  },
+];
 
 const sectorIcons: Record<SectorChoice, typeof Landmark> = {
   balanced: Scale,
@@ -151,6 +221,35 @@ function getTargetDeck(target: SectorOracleTarget) {
     : target.event?.deck ?? "A future headline clicks across the brass ticker.";
 }
 
+function getJournalParagraphs(text: string) {
+  return text.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean);
+}
+
+function getSectorJournalContent(game: SectorOracleState) {
+  if (game.phase === "complete") {
+    return {
+      date: sectorOracleEndDate,
+      eyebrow: `${sectorOracleCharacterName}'s final journal`,
+      headline: "The final edition",
+      paragraphs: getJournalParagraphs(sectorOracleFinalJournalEntry),
+      title: formatSectorDateWithWeekday(sectorOracleEndDate),
+    };
+  }
+
+  const event = getCurrentSectorEvent(game);
+  const journalText =
+    sectorOracleJournalEntries[event.id] ??
+    `${sectorOracleCharacterName} writes down the headline, checks the account balance, and tries to keep ordinary life from becoming another market signal.`;
+
+  return {
+    date: event.date,
+    eyebrow: `${sectorOracleCharacterName}'s pressroom journal`,
+    headline: event.headline,
+    paragraphs: getJournalParagraphs(journalText),
+    title: `${formatSectorDateWithWeekday(event.date)} · ${event.era}`,
+  };
+}
+
 function getLearningLine(choice: SectorChoice, target: SectorOracleTarget, outcome: SectorOracleOutcome) {
   if (target.isFinal) {
     return "The final score rewards survival, patience, and knowing when the obvious headline was already priced in.";
@@ -181,6 +280,20 @@ function formatSectorDateWithWeekday(date: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00Z`));
+}
+
+function getSectorPreviewDateParts(date: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).formatToParts(new Date(`${date}T00:00:00Z`));
+  return {
+    weekday: parts.find((part) => part.type === "weekday")?.value ?? "",
+    date: `${parts.find((part) => part.type === "month")?.value ?? ""} ${parts.find((part) => part.type === "day")?.value ?? ""}, ${parts.find((part) => part.type === "year")?.value ?? date.slice(0, 4)}`.trim(),
+  };
 }
 
 function getSectorDateParts(date: string) {
@@ -397,25 +510,29 @@ function SectorOracleIntro({ onBegin }: { onBegin: () => void }) {
   return (
     <main className="sector-oracle-shell intro">
       <section className="sector-oracle-intro-panel">
-        <div className="sector-oracle-device" aria-hidden="true">
-          <Telescope size={54} />
-          <span>ORACLE TAPE</span>
-          <i />
-        </div>
+        <figure className="sector-oracle-intro-art">
+          <img
+            src={assetUrl("games/sector-oracle/oracle-of-sectors-chapter-1.webp")}
+            alt="Nora Vale standing beside an antique newspaper press as future market pages spill across the pressroom floor."
+          />
+          <figcaption>Chapter 1 · Oracle Press</figcaption>
+        </figure>
         <div className="sector-oracle-intro-copy">
           <p className="sector-oracle-kicker">Charged Alpha sector game</p>
           <h1>{sectorOracleTitle}</h1>
-          <p>
-            You inherit a brass ticker that prints future market headlines. It never names the winning sector. Your job is to decide who benefits before the next headline arrives.
-          </p>
+          <div className="sector-oracle-story-prologue">
+            {sectorOraclePrologue.map((sentence) => (
+              <p key={sentence}>{sentence}</p>
+            ))}
+          </div>
           <div className="sector-oracle-rules">
-            <span><Newspaper size={15} /> Pick a future headline</span>
-            <span><WalletCards size={15} /> Choose one sector</span>
+            <span><Newspaper size={15} /> Change investment sectors off future knowledge</span>
+            <span><WalletCards size={15} /> $100,000 inheritance</span>
             <span><BadgeDollarSign size={15} /> Switching can trigger 15% tax</span>
             <span><Trophy size={15} /> Beat simple benchmarks</span>
           </div>
           <button className="sector-oracle-primary" type="button" onClick={onBegin}>
-            Open the ticker
+            Start playing
             <ChevronRight size={18} />
           </button>
         </div>
@@ -490,7 +607,7 @@ function SectorTimelineRail({ game, onSelectTarget }: { game: SectorOracleState;
   };
 
   return (
-    <section className="sector-oracle-timeline-rail" aria-label="Sector Oracle timeline" style={style} data-guide-target="sector-timeline">
+    <section className="sector-oracle-timeline-rail" aria-label="Sector Oracle timeline" style={style} data-guide-target="timeline">
       <div className="sector-oracle-timeline-context">
         <strong>Timeline</strong>
         <span><b>Current</b> {formatSectorDate(currentEvent.date)} <i aria-hidden="true">to</i> <b>Target</b> {formatSectorDate(target.date)}</span>
@@ -547,8 +664,9 @@ function SectorAllocationStrip({
   const bestChoice = marketVisionUnlocked ? getBestChoice(outcomes) : null;
 
   return (
-    <div className={`sector-oracle-allocation-strip ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"}`} aria-label="Choose sector allocation" data-guide-target="sector-allocation">
+    <div className={`sector-oracle-allocation-strip ${marketVisionUnlocked ? "vision-unlocked" : "vision-locked"}`} aria-label="Choose sector allocation" data-guide-target="allocation-buttons">
       {sectorChoiceOrder.map((choice) => {
+        const choiceIndex = sectorChoiceOrder.indexOf(choice);
         const Icon = sectorIcons[choice];
         const outcome = outcomes[choice];
         const tone = marketVisionUnlocked ? getOutcomeTone(outcome.returnPercent) : "neutral";
@@ -560,7 +678,7 @@ function SectorAllocationStrip({
           <button
             key={choice}
             className={`sector-oracle-allocation-choice ${choice} ${tone} ${active ? "active" : ""} ${previous ? "previous-choice" : ""} ${choice === bestChoice ? "best" : ""} ${outcome.tax > 0 ? "has-tax" : ""}`}
-            style={{ "--sector-heat": alpha } as CSSProperties}
+            style={{ "--sector-choice-index": choiceIndex, "--sector-heat": alpha } as CSSProperties}
             type="button"
             aria-pressed={active}
             aria-label={
@@ -653,6 +771,32 @@ function SectorSelectedAllocationBanner({
         <strong>{allocationSummary}</strong>
       </div>
     </aside>
+  );
+}
+
+function SectorTimelineStatusBanner({ game }: { game: SectorOracleState }) {
+  const currentEvent = getCurrentSectorEvent(game);
+  const currentDateLabel = formatSectorDateWithWeekday(currentEvent.date);
+  const totalReturnPercent = ((game.bankroll - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100;
+  const totalReturnTone = totalReturnPercent >= 0 ? "positive" : "negative";
+
+  return (
+    <div
+      className="sector-oracle-status-banner timeline-status"
+      aria-label={`Current date ${currentDateLabel}. Current account balance ${formatSectorMoney(game.bankroll)}, ${formatSectorPercent(totalReturnPercent)} total return.`}
+    >
+      <span className="current-date">
+        <b>Current date</b>
+        <strong>{currentDateLabel}</strong>
+      </span>
+      <span className="balance">
+        <b>Account balance</b>
+        <strong>
+          {formatSectorMoney(game.bankroll)}
+          <em className={totalReturnTone}>({formatSectorPercent(totalReturnPercent)})</em>
+        </strong>
+      </span>
+    </div>
   );
 }
 
@@ -819,7 +963,7 @@ function SectorHeadlineSelector({
             className={`sector-oracle-primary sector-oracle-date-advance ${pulseKey > 0 ? "is-pulsing" : ""}`}
             type="button"
             onClick={onPlay}
-            data-guide-target="sector-play"
+            data-guide-target="advance-game"
           >
             <Play size={18} />
             <span>Play</span>
@@ -831,9 +975,10 @@ function SectorHeadlineSelector({
 
       <SectorAllocationStrip game={game} marketVisionUnlocked={marketVisionUnlocked} onChoose={onChoose} outcomes={outcomes} />
       <SectorSelectedAllocationBanner game={game} marketVisionUnlocked={marketVisionUnlocked} outcome={selectedOutcome} pulseKey={pulseKey} />
+      <SectorTimelineStatusBanner game={game} />
       <SectorTimelineRail game={game} onSelectTarget={onSelectTarget} />
 
-      <article className="sector-oracle-headline-pop" aria-label="Scrollable future headline selector" data-guide-target="sector-headline">
+      <article className="sector-oracle-headline-pop" aria-label="Scrollable future headline selector" data-guide-target="headline-deck">
         <div className="sector-oracle-deck-kicker">
           <span>{target.isFinal ? "Final tape" : `Future tape ${selectedIndex + 1} of ${game.events.length}`}</span>
           <em>{getSectorSpanLabel(game, target)}</em>
@@ -912,9 +1057,10 @@ function SectorHeadlinePreview({ game }: { game: SectorOracleState }) {
   const article = target.event?.article;
   const imageStyle = image ? ({ "--sector-headline-image": `url("${image.url}")` } as CSSProperties) : undefined;
   const articleParagraphs = getSectorArticlePreviewParagraphs(article?.lede ?? getTargetDeck(target));
+  const headlineDateParts = getSectorPreviewDateParts(target.date);
 
   return (
-    <article className={`sector-oracle-selected-page ${image ? "has-image" : `image-${imageStatus}`}`} style={imageStyle}>
+    <article className={`sector-oracle-selected-page ${image ? "has-image" : `image-${imageStatus}`}`} style={imageStyle} data-guide-target="front-page">
       <div className="sector-oracle-masthead mini">
         <span>{target.isFinal ? "Final tape" : target.label}</span>
         {article ? (
@@ -926,7 +1072,10 @@ function SectorHeadlinePreview({ game }: { game: SectorOracleState }) {
         )}
       </div>
       <h1>{getTargetHeadline(target)}</h1>
-      <div className="sector-oracle-front-date">{formatSectorDateWithWeekday(target.date)}</div>
+      <div className="sector-oracle-front-date" aria-label={`Headline date ${formatSectorDateWithWeekday(target.date)}`}>
+        <span>{headlineDateParts.weekday}</span>
+        <strong>{headlineDateParts.date}</strong>
+      </div>
       <div className="sector-oracle-article-lede">
         {articleParagraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
@@ -1223,16 +1372,36 @@ function LastMoveFlash({ result }: { result?: SectorOracleResult }) {
   );
 }
 
+function SectorJournalPanel({ game }: { game: SectorOracleState }) {
+  const entry = getSectorJournalContent(game);
+
+  return (
+    <article className="sector-oracle-journal-panel">
+      <p className="sector-oracle-journal-eyebrow">{entry.eyebrow}</p>
+      <h2>{entry.title}</h2>
+      <strong>{entry.headline}</strong>
+      <div className="sector-oracle-journal-entry">
+        {entry.paragraphs.map((paragraph, index) => (
+          <p key={`${entry.date}-${index}`}>{paragraph}</p>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function SectorOverlay({ game, overlay, onClose }: { game: SectorOracleState; overlay: Overlay; onClose: () => void }) {
   if (!overlay) {
     return null;
   }
   const last = game.results.at(-1);
+  const overlayTitle = overlay === "ledger" ? "Ledger" : overlay === "journal" ? "Journal" : "Lesson";
+  const overlayLabel = overlay === "ledger" ? "Sector ledger" : overlay === "journal" ? `${sectorOracleCharacterName}'s journal` : "Sector lesson";
+
   return (
     <div className="sector-oracle-modal-backdrop" role="presentation" onClick={onClose}>
-      <section className="sector-oracle-modal" role="dialog" aria-modal="true" aria-label={overlay === "ledger" ? "Sector ledger" : "Sector lesson"} onClick={(event) => event.stopPropagation()}>
+      <section className="sector-oracle-modal" role="dialog" aria-modal="true" aria-label={overlayLabel} onClick={(event) => event.stopPropagation()}>
         <header>
-          <span>{overlay === "ledger" ? "Ledger" : "Lesson"}</span>
+          <span>{overlayTitle}</span>
           <button type="button" onClick={onClose} aria-label="Close panel">Close</button>
         </header>
         {overlay === "ledger" ? (
@@ -1253,6 +1422,8 @@ function SectorOverlay({ game, overlay, onClose }: { game: SectorOracleState; ov
               ))}
             </section>
           </div>
+        ) : overlay === "journal" ? (
+          <SectorJournalPanel game={game} />
         ) : (
           <div className="sector-oracle-lesson-panel">
             <strong>{last ? sectorChoiceLabels[last.choice] : "Sector rotation"}</strong>
@@ -1262,6 +1433,21 @@ function SectorOverlay({ game, overlay, onClose }: { game: SectorOracleState; ov
         )}
       </section>
     </div>
+  );
+}
+
+function SectorDashboardGuideOverlay({ onStart }: { onStart: () => void }) {
+  return (
+    <TargetGuideOverlay
+      buttonLabel="Start"
+      className="sector-oracle-guide-live"
+      guideItems={sectorDashboardGuideItems}
+      label="Sector Oracle dashboard guide"
+      onStart={onStart}
+      showStartButton={false}
+      subtitle="Click anywhere to start"
+      title="Nora's Dashboard"
+    />
   );
 }
 
@@ -1302,12 +1488,16 @@ function SectorOracleDashboard({
           <SectorHeadlineSelector game={game} onChoose={onChoose} onPlay={onPlay} onSelectTarget={onSelectTarget} />
         </div>
         <footer className="sector-oracle-bottom">
-          <button type="button" onClick={() => onOpenOverlay("lesson")}>
+          <button type="button" onClick={() => onOpenOverlay("journal")} data-guide-target="journal">
             <BookOpen size={15} />
+            Journal
+          </button>
+          <button type="button" onClick={() => onOpenOverlay("lesson")}>
+            <Sparkles size={15} />
             Lesson
           </button>
-          <button type="button" onClick={() => onOpenOverlay("ledger")}>
-            <Newspaper size={15} />
+          <button type="button" onClick={() => onOpenOverlay("ledger")} data-guide-target="ledger-button">
+            <WalletCards size={15} />
             Ledger
           </button>
           <span>{sectorOracleStartDate.slice(0, 4)}-{sectorOracleEndDate.slice(0, 4)} sector prophecy</span>
@@ -1318,7 +1508,12 @@ function SectorOracleDashboard({
 }
 
 function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset: () => void }) {
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [submittedScore, setSubmittedScore] = useState<LeaderboardSubmittedEntry | null>(null);
   const gain = game.bankroll - sectorOracleStartingBankroll;
+  const gainPercent = (gain / sectorOracleStartingBankroll) * 100;
+  const totalTaxPaid = game.results.reduce((total, result) => total + result.tax, 0);
+  const reallocations = game.results.filter((result, index, results) => index > 0 && result.choice !== results[index - 1]?.choice).length;
   const bestBenchmark = Math.max(game.indexBenchmark, game.balancedBenchmark, game.techBenchmark, game.bondsBenchmark);
   const verdict = game.bankroll >= bestBenchmark ? "Oracle Fund Champion" : game.bankroll >= game.indexBenchmark ? "Sector Rotation Winner" : "Headline Apprentice";
   const rows = [
@@ -1351,11 +1546,71 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
         <p>
           The lesson: future headlines are not enough. Sector winners come from second-order effects, starting valuations, and whether the market already believed the story.
         </p>
-        <button className="sector-oracle-primary" type="button" onClick={onReset}>
-          Play again
-          <RotateCcw size={18} />
-        </button>
+        <div className="sector-oracle-final-journal">
+          <span>{sectorOracleCharacterName}'s final journal</span>
+          <p>{sectorOracleFinalJournalEntry}</p>
+        </div>
+        <div className="sector-oracle-final-actions">
+          <button className="sector-oracle-primary" type="button" onClick={() => setLeaderboardOpen(true)}>
+            High Scores
+            <Trophy size={18} />
+          </button>
+          <button className="sector-oracle-primary secondary" type="button" onClick={onReset}>
+            Play again
+            <RotateCcw size={18} />
+          </button>
+        </div>
       </section>
+      {leaderboardOpen && (
+        <InvestmentLeaderboardOverlay
+          benchmarkRows={[
+            {
+              detail: "S&P 500 sector baseline",
+              id: "sector-index-benchmark",
+              label: "Index",
+              returnPercent: ((game.indexBenchmark - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100,
+              score: game.indexBenchmark,
+            },
+            {
+              detail: "Diversified sector mix",
+              id: "sector-balanced-benchmark",
+              label: "Balanced",
+              returnPercent: ((game.balancedBenchmark - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100,
+              score: game.balancedBenchmark,
+            },
+            {
+              detail: "Held technology through every tape",
+              id: "sector-tech-benchmark",
+              label: "Always Tech",
+              returnPercent: ((game.techBenchmark - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100,
+              score: game.techBenchmark,
+            },
+            {
+              detail: "Best sector each window",
+              id: "sector-perfect-benchmark",
+              label: "Perfect Oracle",
+              returnPercent: ((game.perfectOracle - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100,
+              score: game.perfectOracle,
+            },
+          ]}
+          currentRunDetail={`${game.results.length} jumps · ${formatSectorMoney(totalTaxPaid)} tax`}
+          formatDateLong={formatSectorDateWithWeekday}
+          formatMoney={formatSectorMoney}
+          formatPercent={formatSectorPercent}
+          gameSlug="sector-oracle"
+          gameTitle={sectorOracleTitle}
+          moves={game.results.length}
+          onClose={() => setLeaderboardOpen(false)}
+          onSubmitted={setSubmittedScore}
+          periodLabel="25 years"
+          reallocations={reallocations}
+          returnPercent={gainPercent}
+          score={game.bankroll}
+          storageKey="charged-alpha-sector-oracle-leaderboard"
+          submittedEntry={submittedScore}
+          taxPaid={totalTaxPaid}
+        />
+      )}
     </main>
   );
 }
@@ -1364,6 +1619,8 @@ export function SectorOracleGame() {
   const [game, setGame] = useState(createSectorOracle);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [reelTransition, setReelTransition] = useState<SectorReelTransition | null>(null);
+  const [dashboardGuideOpen, setDashboardGuideOpen] = useState(false);
+  const [dashboardGuideSeen, setDashboardGuideSeen] = useState(false);
   const reelTimerRef = useRef<number | null>(null);
   const pulseKey = useMemo(() => game.results.length, [game.results.length]);
 
@@ -1385,11 +1642,19 @@ export function SectorOracleGame() {
       reelTimerRef.current = null;
     }
   };
-  const begin = () => setGame((current) => startSectorOracle(current));
+  const begin = () => {
+    setGame((current) => startSectorOracle(current));
+    if (!dashboardGuideSeen) {
+      setDashboardGuideOpen(true);
+      setDashboardGuideSeen(true);
+    }
+  };
   const reset = () => {
     clearReelTimer();
     setOverlay(null);
     setReelTransition(null);
+    setDashboardGuideOpen(false);
+    setDashboardGuideSeen(false);
     setGame(resetSectorOracle());
   };
   const choose = (choice: SectorChoice) => setGame((current) => setSectorChoice(current, choice));
@@ -1433,6 +1698,7 @@ export function SectorOracleGame() {
         onSelectTarget={selectTarget}
       />
       {reelTransition && <SectorOracleReelOverlay transition={reelTransition} />}
+      {dashboardGuideOpen && !reelTransition && !overlay && <SectorDashboardGuideOverlay onStart={() => setDashboardGuideOpen(false)} />}
       <SectorOverlay game={game} overlay={overlay} onClose={() => setOverlay(null)} />
     </div>
   );

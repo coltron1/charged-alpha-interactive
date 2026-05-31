@@ -1,5 +1,5 @@
 import { Minimize2, Send } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 export type ResultsChartPoint = {
   date: string;
@@ -35,6 +35,15 @@ type LeaderboardRow = LeaderboardBenchmarkRow & {
   highlighted?: boolean;
   kind: "benchmark" | "player" | "preview";
   submittedAt?: string;
+};
+
+type ChargedAlphaUser = {
+  authenticated: boolean;
+  email?: string;
+  firstName?: string;
+  loginUrl?: string;
+  name?: string;
+  registerUrl?: string;
 };
 
 function dateToUtcTime(date: string) {
@@ -263,39 +272,172 @@ function sortLeaderboardRows(rows: LeaderboardRow[]) {
   return rows.sort((a, b) => b.score - a.score);
 }
 
+function getGamePath(gameSlug?: string) {
+  return gameSlug ? `/games/${gameSlug}` : "/games";
+}
+
+function getChargedAlphaFirstName(user: ChargedAlphaUser | null) {
+  const candidates = [user?.firstName, user?.name, user?.email?.split("@")[0]];
+  for (const candidate of candidates) {
+    const cleaned = sanitizeLeaderboardName(candidate ?? "");
+    if (cleaned) {
+      return cleaned.split(/\s+/)[0];
+    }
+  }
+  return "Player";
+}
+
+function getAccountUrl(kind: "login" | "register", user: ChargedAlphaUser | null, gameSlug?: string) {
+  const provided = kind === "login" ? user?.loginUrl : user?.registerUrl;
+  if (provided) {
+    return provided;
+  }
+  return `/auth/${kind}?next=${encodeURIComponent(getGamePath(gameSlug))}`;
+}
+
+function normalizeServerScore(value: unknown, fallbackDetail: string): LeaderboardSubmittedEntry | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== "string" || typeof row.name !== "string" || typeof row.score !== "number") {
+    return null;
+  }
+
+  const moves = typeof row.moves === "number" ? row.moves : null;
+  const reallocations = typeof row.reallocations === "number" ? row.reallocations : null;
+  const taxPaid = typeof row.taxPaid === "number" ? row.taxPaid : null;
+  const details = [
+    moves !== null ? `${moves} ${moves === 1 ? "move" : "moves"}` : "",
+    reallocations !== null ? `${reallocations} reallocations` : "",
+    taxPaid !== null && taxPaid > 0 ? `$${Math.round(taxPaid).toLocaleString("en-US")} tax` : "",
+  ].filter(Boolean);
+
+  return {
+    createdAt: typeof row.createdAt === "string" ? row.createdAt : "",
+    detail: details.join(" · ") || fallbackDetail,
+    email: "",
+    id: row.id,
+    name: row.name,
+    returnPercent: typeof row.returnPercent === "number" ? row.returnPercent : 0,
+    score: row.score,
+  };
+}
+
+async function fetchChargedAlphaUser(gameSlug?: string): Promise<ChargedAlphaUser | null> {
+  const response = await fetch(`/auth/api/me?next=${encodeURIComponent(getGamePath(gameSlug))}`, { credentials: "same-origin" });
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as ChargedAlphaUser;
+}
+
+async function fetchPublicLeaderboardEntries(gameSlug: string, fallbackDetail: string) {
+  const response = await fetch(`/games/api/leaderboard/${gameSlug}`, { credentials: "same-origin" });
+  if (!response.ok) {
+    return null;
+  }
+  const payload = (await response.json()) as { entries?: unknown };
+  if (!Array.isArray(payload.entries)) {
+    return null;
+  }
+  return payload.entries
+    .map((entry) => normalizeServerScore(entry, fallbackDetail))
+    .filter((entry): entry is LeaderboardSubmittedEntry => Boolean(entry));
+}
+
+async function postPublicLeaderboardEntry({
+  currentRunDetail,
+  gameSlug,
+  moves,
+  reallocations,
+  returnPercent,
+  score,
+  taxPaid,
+}: {
+  currentRunDetail: string;
+  gameSlug: string;
+  moves: number;
+  reallocations: number;
+  returnPercent: number;
+  score: number;
+  taxPaid: number;
+}) {
+  const response = await fetch("/games/api/scores", {
+    body: JSON.stringify({
+      game_slug: gameSlug,
+      metadata: {
+        detail: currentRunDetail,
+        source: gameSlug,
+      },
+      moves,
+      reallocations,
+      return_percent: returnPercent,
+      score,
+      tax_paid: taxPaid,
+    }),
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  const payload = (await response.json().catch(() => ({}))) as { entry?: unknown; error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Score was not accepted.");
+  }
+
+  const entry = normalizeServerScore(payload.entry, currentRunDetail);
+  if (!entry) {
+    throw new Error("Score response was incomplete.");
+  }
+  return entry;
+}
+
 export function InvestmentLeaderboardOverlay({
   benchmarkRows,
   currentRunDetail,
   formatDateLong,
   formatMoney,
   formatPercent,
+  gameSlug,
   gameTitle,
+  moves = 0,
   onClose,
   onSubmitted,
   periodLabel,
+  reallocations = 0,
   returnPercent,
   score,
   storageKey,
   submittedEntry,
+  taxPaid = 0,
 }: {
   benchmarkRows: LeaderboardBenchmarkRow[];
   currentRunDetail: string;
   formatDateLong: (date: string) => string;
   formatMoney: (value: number) => string;
   formatPercent: (value: number) => string;
+  gameSlug?: string;
   gameTitle: string;
+  moves?: number;
   onClose: () => void;
   onSubmitted: (entry: LeaderboardSubmittedEntry) => void;
   periodLabel: string;
+  reallocations?: number;
   returnPercent: number;
   score: number;
   storageKey: string;
   submittedEntry: LeaderboardSubmittedEntry | null;
+  taxPaid?: number;
 }) {
   const [entries, setEntries] = useState(() => loadLeaderboardEntries(storageKey));
   const [playerName, setPlayerName] = useState("");
   const [email, setEmail] = useState("");
   const [formMessage, setFormMessage] = useState(submittedEntry ? "Score posted to this device." : "");
+  const [chargedAlphaUser, setChargedAlphaUser] = useState<ChargedAlphaUser | null>(null);
+  const [serverLeaderboardAvailable, setServerLeaderboardAvailable] = useState(false);
+  const [postingScore, setPostingScore] = useState(false);
   const previewEntry: LeaderboardSubmittedEntry = submittedEntry ?? {
     createdAt: "",
     detail: currentRunDetail,
@@ -319,8 +461,53 @@ export function InvestmentLeaderboardOverlay({
       : [{ ...previewEntry, kind: "preview" as const, label: "Your run", highlighted: true }]),
   ]);
   const previewRank = rows.findIndex((row) => row.id === previewEntry.id) + 1;
+  const accountFirstName = getChargedAlphaFirstName(chargedAlphaUser);
+  const mustSignInForPublicScore = Boolean(gameSlug && serverLeaderboardAvailable && !chargedAlphaUser?.authenticated);
+  const loginUrl = getAccountUrl("login", chargedAlphaUser, gameSlug);
+  const registerUrl = getAccountUrl("register", chargedAlphaUser, gameSlug);
 
-  const submitScore = (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!gameSlug) {
+      return;
+    }
+
+    let cancelled = false;
+    fetchPublicLeaderboardEntries(gameSlug, currentRunDetail)
+      .then((serverEntries) => {
+        if (!cancelled && serverEntries) {
+          setEntries(serverEntries);
+          setServerLeaderboardAvailable(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setServerLeaderboardAvailable(false);
+        }
+      });
+
+    fetchChargedAlphaUser(gameSlug)
+      .then((user) => {
+        if (!cancelled && user) {
+          setChargedAlphaUser(user);
+          if (user.authenticated) {
+            const firstName = getChargedAlphaFirstName(user);
+            setPlayerName((current) => current || firstName);
+            setEmail((current) => current || user.email || "");
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setChargedAlphaUser(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentRunDetail, gameSlug]);
+
+  const submitScore = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanName = sanitizeLeaderboardName(playerName);
     const cleanEmail = sanitizeLeaderboardEmail(email);
@@ -329,11 +516,15 @@ export function InvestmentLeaderboardOverlay({
       setFormMessage("This run is already posted.");
       return;
     }
-    if (cleanName.length < 2) {
+    if (mustSignInForPublicScore) {
+      setFormMessage("Create or sign in to a free Charged Alpha account to post this public score.");
+      return;
+    }
+    if (!chargedAlphaUser?.authenticated && cleanName.length < 2) {
       setFormMessage("Enter a display name.");
       return;
     }
-    if (!isValidLeaderboardEmail(cleanEmail)) {
+    if (!serverLeaderboardAvailable && !isValidLeaderboardEmail(cleanEmail)) {
       setFormMessage("Enter a valid email address.");
       return;
     }
@@ -341,17 +532,40 @@ export function InvestmentLeaderboardOverlay({
     const entry: LeaderboardSubmittedEntry = {
       createdAt: new Date().toISOString(),
       detail: currentRunDetail,
-      email: cleanEmail,
+      email: chargedAlphaUser?.authenticated ? chargedAlphaUser.email || "" : cleanEmail,
       id: `score-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: cleanName,
+      name: chargedAlphaUser?.authenticated ? accountFirstName : cleanName,
       returnPercent,
       score: Math.round(score),
     };
-    const nextEntries = [entry, ...entries].sort((a, b) => b.score - a.score).slice(0, 25);
-    saveLeaderboardEntries(storageKey, nextEntries);
-    setEntries(nextEntries);
-    onSubmitted(entry);
-    setFormMessage("Posted. Your email is saved locally for the future database hook.");
+    setPostingScore(true);
+    try {
+      if (gameSlug && serverLeaderboardAvailable && chargedAlphaUser?.authenticated) {
+        const serverEntry = await postPublicLeaderboardEntry({
+          currentRunDetail,
+          gameSlug,
+          moves,
+          reallocations,
+          returnPercent,
+          score: entry.score,
+          taxPaid,
+        });
+        const serverEntries = await fetchPublicLeaderboardEntries(gameSlug, currentRunDetail);
+        setEntries(serverEntries ?? [serverEntry, ...entries]);
+        onSubmitted(serverEntry);
+        setFormMessage("Posted to your Charged Alpha account.");
+      } else {
+        const nextEntries = [entry, ...entries].sort((a, b) => b.score - a.score).slice(0, 25);
+        saveLeaderboardEntries(storageKey, nextEntries);
+        setEntries(nextEntries);
+        onSubmitted(entry);
+        setFormMessage("Posted on this device. Sign in on Charged Alpha for public scores.");
+      }
+    } catch (error) {
+      setFormMessage(error instanceof Error ? error.message : "Score posting failed. Try again after signing in.");
+    } finally {
+      setPostingScore(false);
+    }
   };
 
   return (
@@ -373,37 +587,73 @@ export function InvestmentLeaderboardOverlay({
             <strong>{formatMoney(score)}</strong>
             <em>{formatPercent(returnPercent)} over {periodLabel}</em>
           </div>
-          <form onSubmit={submitScore}>
-            <label>
-              <span>Name</span>
-              <input
-                type="text"
-                autoComplete="name"
-                value={playerName}
-                onChange={(event) => setPlayerName(event.target.value)}
-                placeholder="Your name"
-                disabled={Boolean(submittedEntry)}
-                maxLength={24}
-              />
-            </label>
-            <label>
-              <span>Email</span>
-              <input
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                disabled={Boolean(submittedEntry)}
-                maxLength={80}
-              />
-            </label>
-            <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry)}>
-              <Send size={16} />
-              {submittedEntry ? "Score Posted" : "Post Score"}
-            </button>
+          <form
+            className={`${chargedAlphaUser?.authenticated ? "account-ready" : ""} ${mustSignInForPublicScore ? "account-required" : ""}`}
+            onSubmit={submitScore}
+          >
+            {chargedAlphaUser?.authenticated ? (
+              <div className="storybook-leaderboard-account-card">
+                <span>Posting as</span>
+                <strong>{accountFirstName}</strong>
+                <em>{chargedAlphaUser.email}</em>
+              </div>
+            ) : mustSignInForPublicScore ? (
+              <div className="storybook-leaderboard-auth-card">
+                <span>Free account required</span>
+                <strong>Save this run publicly</strong>
+                <em>Use your Charged Alpha account to post scores and keep game progress.</em>
+                <div>
+                  <a className="primary-action legacy-primary" href={registerUrl}>
+                    Create Account
+                  </a>
+                  <a className="secondary-action compact" href={loginUrl}>
+                    Sign In
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label>
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    value={playerName}
+                    onChange={(event) => setPlayerName(event.target.value)}
+                    placeholder="Your name"
+                    disabled={Boolean(submittedEntry)}
+                    maxLength={24}
+                  />
+                </label>
+                <label>
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    disabled={Boolean(submittedEntry)}
+                    maxLength={80}
+                  />
+                </label>
+              </>
+            )}
+            {!mustSignInForPublicScore && (
+              <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry) || postingScore}>
+                <Send size={16} />
+                {submittedEntry ? "Score Posted" : postingScore ? "Posting..." : "Post Score"}
+              </button>
+            )}
           </form>
-          <p>{formMessage || "Scores are stored on this device now and can be wired to a database later."}</p>
+          <p>
+            {formMessage ||
+              (serverLeaderboardAvailable
+                ? chargedAlphaUser?.authenticated
+                  ? "Public scores use your Charged Alpha first name."
+                  : "Create or sign in to post this score publicly."
+                : "Standalone scores are stored on this device.")}
+          </p>
         </section>
 
         <section className="storybook-leaderboard-list" aria-label="Leaderboard rankings">
