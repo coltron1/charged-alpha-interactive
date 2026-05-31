@@ -9,6 +9,7 @@ import {
   Cpu,
   Fuel,
   HeartPulse,
+  Home,
   Landmark,
   Newspaper,
   Play,
@@ -1559,6 +1560,10 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
             Play again
             <RotateCcw size={18} />
           </button>
+          <a className="sector-oracle-primary secondary" href="/games">
+            Back to Games
+            <Home size={18} />
+          </a>
         </div>
       </section>
       {leaderboardOpen && (

@@ -3,6 +3,7 @@ import {
   BriefcaseBusiness,
   ChevronRight,
   ChevronDown,
+  Home,
   Landmark,
   Minimize2,
   Newspaper,
@@ -2204,6 +2205,10 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
             <RotateCcw size={18} />
             Play It Again
           </button>
+          <a className="secondary-action" href="/games">
+            <Home size={18} />
+            Back to Games
+          </a>
         </div>
 
         <section className="storybook-final-overview">

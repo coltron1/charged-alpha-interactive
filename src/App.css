@@ -14025,12 +14025,14 @@ button.has-tooltip:disabled {
 
 .storybook-final-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) minmax(0, 0.85fr);
+  grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.8fr));
   gap: 8px;
 }
 
-.storybook-final-actions button {
+.storybook-final-actions button,
+.storybook-final-actions a {
   justify-content: center;
+  text-decoration: none;
 }
 
 .leaderboard-overlay {
@@ -29651,6 +29653,10 @@ button.has-tooltip:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.sector-oracle-final-actions a {
+  text-decoration: none;
 }
 
 .sector-oracle-primary.secondary {

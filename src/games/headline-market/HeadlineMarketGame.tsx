@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronUp,
   Gem,
+  Home,
   Landmark,
   LineChart,
   Minimize2,
@@ -3503,6 +3504,10 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
             <RotateCcw size={18} />
             Play It Again
           </button>
+          <a className="secondary-action" href="/games">
+            <Home size={18} />
+            Back to Games
+          </a>
         </div>
 
         <section className="storybook-final-overview">
