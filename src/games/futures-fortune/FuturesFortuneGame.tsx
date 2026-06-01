@@ -71,10 +71,15 @@ import {
   type FuturesResult,
   type FuturesTarget,
 } from "./simulation/futuresFortune";
-import { futuresChronicleName, futuresDashboardGuideItems, futuresPrologueDate, futuresStory } from "./content/futuresCopy";
+import {
+  futuresChronicleName,
+  futuresCompactDashboardGuideItems,
+  futuresDashboardGuideItems,
+  futuresPrologueDate,
+  futuresStory,
+} from "./content/futuresCopy";
 import type { FuturesContractChoice, FuturesHeadlineEvent } from "./content/futuresHeadlines";
 
-type IntroPage = "setup" | "rules";
 type Overlay = "journal" | "ledger" | "article" | "index" | null;
 type FuturesMathTone = "gain" | "loss" | "flat";
 type FuturesMathRow = {
@@ -1036,98 +1041,38 @@ function FuturesFinalJournalOverlay({ game, onClose }: { game: FuturesFortuneSta
 
 function FuturesIntro({
   game,
-  introPage,
   onBegin,
-  onTurnPage,
 }: {
   game: FuturesFortuneState;
-  introPage: IntroPage;
   onBegin: () => void;
-  onTurnPage: () => void;
 }) {
   return (
     <main className="app-shell legacy-shell storybook-shell storybook-intro-shell futures-fortune-shell">
-      <section className={`storybook-book intro ${introPage} futures-intro-book`}>
-        {introPage === "setup" ? (
-          <article className="storybook-intro-page prologue futures-prologue">
-            <figure className="storybook-prologue-art futures-prologue-art">
-              <img
-                src={assetUrl("games/futures-fortune/grain-ledger-prologue.webp")}
-                alt="Cartoon of Riley Bell holding a brass key beside her granddad's locked grain ledger in a rural grain elevator office."
-              />
-            </figure>
-            <div className="storybook-prologue-copy-panel">
-              <p className="storybook-game-title">Harvest Ledger</p>
-              <p className="eyebrow">Futures desk prologue</p>
-              <h1>The Grain Ledger</h1>
-              <p className="storybook-prologue-date">{futuresPrologueDate}</p>
-              <p className="storybook-copy">{futuresStory.prologue}</p>
-            </div>
-            <div className="storybook-chapter-one-cards">
-              <span>{futuresStory.hook}</span>
-              <span>Same rules: pick a future headline, choose one of four positions, and let time run.</span>
-            </div>
-            <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play" type="button" onClick={onTurnPage}>
-              <Play size={18} />
-              <span>Start Game</span>
-              <small>{formatDateLong(getCurrentFuturesEvent(game).date)}</small>
-            </button>
-          </article>
-        ) : (
-          <article className="storybook-intro-page rules futures-rules">
-            <h1>How To Play</h1>
-            <p className="storybook-howto-goal">Goal: Use future headlines to learn how grain futures react to weather, supply reports, trade policy, and timing.</p>
-            <div className="storybook-howto-shots" aria-label="How to play Harvest Ledger">
-              <section className="storybook-howto-shot dashboard">
-                <span className="storybook-howto-number">1</span>
-                <div className="storybook-howto-screen" aria-hidden="true">
-                  <div className="storybook-howto-date">Aug 6, 2010</div>
-                  <div className="storybook-howto-rail">
-                    <span />
-                    <i />
-                  </div>
-                  <div className="storybook-howto-headlines">
-                    <b>Future headline</b>
-                    <b>Harvest page</b>
-                    <b>Final page</b>
-                  </div>
-                </div>
-                <strong>Set the date</strong>
-                <p>Use the price-wheel, headline stack, chapter index, or timeline to pick a future headline.</p>
-              </section>
-              <section className="storybook-howto-shot decision">
-                <span className="storybook-howto-number">2</span>
-                <div className="storybook-howto-screen" aria-hidden="true">
-                  <span className="storybook-howto-label">Make Selection</span>
-                  <div className="storybook-howto-choice neutral">T-Bills</div>
-                  <div className="storybook-howto-choice green">Corn</div>
-                  <div className="storybook-howto-choice red">Wheat</div>
-                </div>
-                <strong>Choose strategy</strong>
-                <p>Treasury Bills, Corn, Soybeans, or Wheat. The position term runs until the selected date.</p>
-              </section>
-              <section className="storybook-howto-shot heat">
-                <span className="storybook-howto-number">3</span>
-                <div className="storybook-howto-screen" aria-hidden="true">
-                  <div className="storybook-howto-heat green">Gain signal</div>
-                  <div className="storybook-howto-heat red">Loss signal</div>
-                  <div className="storybook-howto-play">Play</div>
-                </div>
-                <strong>Press Play</strong>
-                <p>Advance through time. Market Vision unlocks halfway through the decade.</p>
-              </section>
-            </div>
-            <section className="futures-contract-rule-card" aria-label="Futures contract terms">
-              <strong>Contract Terms</strong>
-              <p>{futuresContractRuleSummary}</p>
-              <p>Crop choices buy as many whole 5,000-bushel contracts as the account can afford; the leftover dollars earn Treasury bills. Gains are taxed when the position settles.</p>
-            </section>
-            <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play storybook-briefcase-play" type="button" onClick={onBegin}>
-              <Play size={18} />
-              Play
-            </button>
-          </article>
-        )}
+      <section className="storybook-book intro setup futures-intro-book">
+        <article className="storybook-intro-page prologue futures-prologue">
+          <figure className="storybook-prologue-art futures-prologue-art">
+            <img
+              src={assetUrl("games/futures-fortune/grain-ledger-prologue.webp")}
+              alt="Cartoon of Riley Bell holding a brass key beside her granddad's locked grain ledger in a rural grain elevator office."
+            />
+          </figure>
+          <div className="storybook-prologue-copy-panel">
+            <p className="storybook-game-title">Harvest Ledger</p>
+            <p className="eyebrow">Futures desk prologue</p>
+            <h1>The Grain Ledger</h1>
+            <p className="storybook-prologue-date">{futuresPrologueDate}</p>
+            <p className="storybook-copy">{futuresStory.prologue}</p>
+          </div>
+          <div className="storybook-chapter-one-cards">
+            <span>{futuresStory.hook}</span>
+            <span>Start on Riley's dashboard: choose a future clipping, pick Treasury Bills or one grain future, then let time run.</span>
+          </div>
+          <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play" type="button" onClick={onBegin}>
+            <Play size={18} />
+            <span>Start Game</span>
+            <small>{formatDateLong(getCurrentFuturesEvent(game).date)}</small>
+          </button>
+        </article>
       </section>
     </main>
   );
@@ -1361,8 +1306,8 @@ function FuturesSelectedStrategyBanner({
       : `${formatFuturesMoneyCompact(mainAmount)} buys ${outcome.contractCount} ${futuresChoiceShortLabels[game.choice]} contracts = ${formatCompactBushels(totalBushels)}.`;
   const counterpartyLine =
     game.choice === "bills"
-      ? "No futures counterparty is needed."
-      : "Farmer/elevator/trader shorts to lock price.";
+      ? "No futures side."
+      : "Hedger shorts to lock price.";
 
   if (useExperimentalFuturesAllocationScroll) {
     return (
@@ -1562,14 +1507,20 @@ function FuturesSelectedStrategyBanner({
 }
 
 function FuturesDateConsole({
+  compact,
   game,
+  lastResult,
   onChoose,
+  onOpenArticle,
   onOpenIndex,
   onPlay,
   onSelectTarget,
 }: {
+  compact: boolean;
   game: FuturesFortuneState;
+  lastResult?: FuturesResult;
   onChoose: (choice: FuturesChoice) => void;
+  onOpenArticle: () => void;
   onOpenIndex: () => void;
   onPlay: () => void;
   onSelectTarget: (targetIndex: number) => void;
@@ -1579,6 +1530,7 @@ function FuturesDateConsole({
   const selectedTarget = getSelectedFuturesTarget(game);
   const outcomes = getProjectedOutcomes(game);
   const projected = outcomes[game.choice];
+  const currentEvent = getCurrentFuturesEvent(game);
   const minimum = game.currentIndex + 1;
   const headlineWindowStart = Math.max(game.currentIndex, game.selectedTargetIndex - 2);
   const headlineWindowEnd = Math.min(game.events.length, headlineWindowStart + 5);
@@ -1666,65 +1618,94 @@ function FuturesDateConsole({
   };
 
   return (
-    <section className="storybook-date-console rolodex-watch-skin futures-date-console" aria-label="Harvest date selector" data-guide-target="date-console">
-      <FuturesTimeline game={game} onSelectTarget={onSelectTarget} />
-      <article className="storybook-date-headline" aria-label="Rolling headline preview">
-        <div className="storybook-deck-kicker">
-          <span>{selectedTarget.isFinal ? "Final harvest" : `Future page ${selectedTarget.index + 1} of ${game.events.length}`}</span>
-          <em>
-            {formatFuturesSpan(getCurrentFuturesEvent(game).date, selectedTarget.date)} pass · {formatFuturesSpan(selectedTarget.date, futuresEndDate)} remain
-          </em>
-        </div>
-        <div className="futures-term-chip" aria-label="Selected futures contract term">
-          {getFuturesContractTermShortLabel(getCurrentFuturesEvent(game).date, selectedTarget.date)}
-        </div>
-        <button className="futures-headline-index-button" type="button" onClick={onOpenIndex} aria-label="Open harvest index" data-guide-target="chapter-index">
-          <Newspaper size={14} />
-        </button>
-        <div
-          className={`storybook-headline-deck futures-headline-deck ${isSpinning ? "spinning" : ""}`}
-          tabIndex={0}
-          data-guide-target="headline-deck"
-          onKeyDown={handleKeyDown}
-          onWheel={handleWheel}
-          {...spinHandlers}
-        >
-          <div className="storybook-headline-track">
-            {entries.map((index) => {
-              const event = game.events[index];
-              const isFinal = index >= game.events.length;
-              const headline = isFinal ? "Final harvest: close the grain ledger" : event.headline;
-              const isCurrent = index === game.currentIndex;
-              const selected = index === game.selectedTargetIndex;
-              return (
-                <button
-                  key={`${index}-${headline}`}
-                  className={`storybook-headline-card ${isCurrent ? "current" : ""} ${selected ? "selected" : ""} ${event?.major ? "major" : ""}`}
-                  type="button"
-                  data-headline-index={index}
-                  disabled={isCurrent}
-                  onClick={() => {
-                    if (ignoreClickRef.current) return;
-                    if (!isCurrent) onSelectTarget(index);
-                  }}
-                >
-                  <strong className={selected ? "marquee" : ""}>
-                    {selected ? (
-                      <span className="storybook-headline-marquee-track" aria-hidden="true">
-                        <span>{headline}</span>
-                        <span>{headline}</span>
-                      </span>
-                    ) : (
-                      <span className="storybook-headline-text">{headline}</span>
-                    )}
-                  </strong>
-                  <em aria-hidden="true">{isCurrent ? "Now" : selected ? "Selected" : ""}</em>
-                </button>
-              );
-            })}
+    <section
+      className={`storybook-date-console rolodex-watch-skin futures-date-console ${compact ? "compact-dashboard" : ""}`}
+      aria-label="Harvest date selector"
+      data-guide-target="date-console"
+    >
+      {compact ? (
+        <>
+          <div className="futures-date-banner" aria-label="Current and selected headline dates">
+            <span>
+              <b>Current page</b>
+              <strong>{formatDateLong(currentEvent.date)}</strong>
+            </span>
+            <em>{formatFuturesSpan(currentEvent.date, selectedTarget.date)}</em>
+            <span>
+              <b>Selected harvest</b>
+              <strong>{formatDateLong(selectedTarget.date)}</strong>
+            </span>
           </div>
-        </div>
-      </article>
+          <FuturesTimeline game={game} onSelectTarget={onSelectTarget} />
+          <div className="futures-inline-preview-wrap">
+            <div className="futures-term-chip" aria-label="Selected futures contract term">
+              {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
+            </div>
+            <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={onOpenArticle} />
+          </div>
+        </>
+      ) : (
+        <>
+          <FuturesTimeline game={game} onSelectTarget={onSelectTarget} />
+          <article className="storybook-date-headline" aria-label="Rolling headline preview">
+            <div className="storybook-deck-kicker">
+              <span>{selectedTarget.isFinal ? "Final harvest" : `Future page ${selectedTarget.index + 1} of ${game.events.length}`}</span>
+              <em>
+                {formatFuturesSpan(currentEvent.date, selectedTarget.date)} pass · {formatFuturesSpan(selectedTarget.date, futuresEndDate)} remain
+              </em>
+            </div>
+            <div className="futures-term-chip" aria-label="Selected futures contract term">
+              {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
+            </div>
+            <button className="futures-headline-index-button" type="button" onClick={onOpenIndex} aria-label="Open harvest index" data-guide-target="chapter-index">
+              <Newspaper size={14} />
+            </button>
+            <div
+              className={`storybook-headline-deck futures-headline-deck ${isSpinning ? "spinning" : ""}`}
+              tabIndex={0}
+              data-guide-target="headline-deck"
+              onKeyDown={handleKeyDown}
+              onWheel={handleWheel}
+              {...spinHandlers}
+            >
+              <div className="storybook-headline-track">
+                {entries.map((index) => {
+                  const event = game.events[index];
+                  const isFinal = index >= game.events.length;
+                  const headline = isFinal ? "Final harvest: close the grain ledger" : event.headline;
+                  const isCurrent = index === game.currentIndex;
+                  const selected = index === game.selectedTargetIndex;
+                  return (
+                    <button
+                      key={`${index}-${headline}`}
+                      className={`storybook-headline-card ${isCurrent ? "current" : ""} ${selected ? "selected" : ""} ${event?.major ? "major" : ""}`}
+                      type="button"
+                      data-headline-index={index}
+                      disabled={isCurrent}
+                      onClick={() => {
+                        if (ignoreClickRef.current) return;
+                        if (!isCurrent) onSelectTarget(index);
+                      }}
+                    >
+                      <strong className={selected ? "marquee" : ""}>
+                        {selected ? (
+                          <span className="storybook-headline-marquee-track" aria-hidden="true">
+                            <span>{headline}</span>
+                            <span>{headline}</span>
+                          </span>
+                        ) : (
+                          <span className="storybook-headline-text">{headline}</span>
+                        )}
+                      </strong>
+                      <em aria-hidden="true">{isCurrent ? "Now" : selected ? "Selected" : ""}</em>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </article>
+        </>
+      )}
 
       {!useExperimentalFuturesAllocationScroll && (
         <div className="storybook-date-controls futures-controls">
@@ -1783,17 +1764,17 @@ function FuturesPreviewCard({
   );
 }
 
-function FuturesDashboardGuide({ onStart }: { onStart: () => void }) {
+function FuturesDashboardGuide({ compact, onStart }: { compact: boolean; onStart: () => void }) {
   return (
     <TargetGuideOverlay
       buttonLabel="Start"
       className="dashboard-guide-live futures-guide"
-      guideItems={futuresDashboardGuideItems}
+      guideItems={compact ? futuresCompactDashboardGuideItems : futuresDashboardGuideItems}
       label="Futures dashboard guide"
       onStart={onStart}
       showStartButton={false}
-      subtitle="Click anywhere to start"
-      title="Riley's Dashboard"
+      subtitle="Tap anywhere to start"
+      title="Riley's Trading Desk"
     />
   );
 }
@@ -2277,13 +2258,37 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
   );
 }
 
+const futuresCompactDashboardQuery = "(max-width: 700px)";
+
+function getMatchesFuturesCompactDashboard() {
+  return typeof window !== "undefined" && window.matchMedia(futuresCompactDashboardQuery).matches;
+}
+
+function useFuturesCompactDashboard() {
+  const [compact, setCompact] = useState(getMatchesFuturesCompactDashboard);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const query = window.matchMedia(futuresCompactDashboardQuery);
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return compact;
+}
+
 export function FuturesFortuneGame() {
   const [game, setGame] = useState(createFuturesFortune);
-  const [introPage, setIntroPage] = useState<IntroPage>("setup");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [transitionResult, setTransitionResult] = useState<FuturesResult | null>(null);
   const [lessonResult, setLessonResult] = useState<FuturesResult | null>(null);
+  const compactDashboard = useFuturesCompactDashboard();
   const transitionTimerRef = useRef<number | null>(null);
   const currentEvent = getCurrentFuturesEvent(game);
   const selectedTarget = getSelectedFuturesTarget(game);
@@ -2311,7 +2316,6 @@ export function FuturesFortuneGame() {
       transitionTimerRef.current = null;
     }
     setGame(resetFuturesFortune());
-    setIntroPage("setup");
     setOverlay(null);
     setGuideOpen(false);
     setTransitionResult(null);
@@ -2339,7 +2343,7 @@ export function FuturesFortuneGame() {
   };
 
   if (game.phase === "intro") {
-    return <FuturesIntro game={game} introPage={introPage} onBegin={begin} onTurnPage={() => setIntroPage("rules")} />;
+    return <FuturesIntro game={game} onBegin={begin} />;
   }
 
   if (game.phase === "complete") {
@@ -2371,13 +2375,16 @@ export function FuturesFortuneGame() {
 
         <div className="storybook-one-screen dashboard-clean futures-one-screen">
           <FuturesDateConsole
+            compact={compactDashboard}
             game={game}
+            lastResult={lastResult}
             onChoose={(choice) => setGame((current) => setFuturesChoice(current, choice))}
             onOpenIndex={() => setOverlay("index")}
+            onOpenArticle={() => setOverlay("article")}
             onPlay={play}
             onSelectTarget={(targetIndex) => setGame((current) => setFuturesTargetIndex(current, targetIndex))}
           />
-          <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={() => setOverlay("article")} />
+          {!compactDashboard && <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={() => setOverlay("article")} />}
         </div>
 
         <nav className="storybook-bottom-tabs" aria-label="Game and story pages">
@@ -2400,7 +2407,7 @@ export function FuturesFortuneGame() {
       {lessonResult && !transitionResult && !guideOpen && !overlay && (
         <FuturesLessonPopup lesson={createFuturesLearningCards(lessonResult)} result={lessonResult} onClose={() => setLessonResult(null)} />
       )}
-      {guideOpen && <FuturesDashboardGuide onStart={() => setGuideOpen(false)} />}
+      {guideOpen && <FuturesDashboardGuide compact={compactDashboard} onStart={() => setGuideOpen(false)} />}
       {overlay === "article" && <FuturesArticleOverlay target={selectedTarget} onClose={() => setOverlay(null)} />}
       {overlay === "journal" && <FuturesJournalOverlay game={game} onClose={() => setOverlay(null)} />}
       {overlay === "ledger" && <FuturesLedgerOverlay game={game} onClose={() => setOverlay(null)} />}

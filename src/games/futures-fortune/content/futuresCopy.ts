@@ -23,7 +23,7 @@ export const futuresDashboardGuideItems: DashboardGuideItem[] = [
     arrowTargets: ["timeline", "headline-deck"],
     arrowTargetNudges: { timeline: { y: -2 }, "headline-deck": { x: 54, y: -10 } },
     title: "1. Pick Date",
-    body: "Date: drag the timeline or scroll headlines to choose a future grain headline.",
+    body: "Drag the timeline or scroll the headline stack. The clipping preview shows the future page Riley will trade toward.",
     placement: "bottom",
     nudge: { x: 0, y: -34 },
     mobilePlacement: "bottom",
@@ -33,9 +33,21 @@ export const futuresDashboardGuideItems: DashboardGuideItem[] = [
     spotTargets: ["timeline", "headline-deck"],
   },
   {
+    target: "allocation-buttons",
+    title: "2. Choose Position",
+    body: "Pick Treasury Bills or one grain future. Crop choices buy whole modeled contracts and leftover cash stays in bills.",
+    placement: "top",
+    nudge: { x: -12, y: -12 },
+    mobilePlacement: "top",
+    mobileNudge: { x: 0, y: -16 },
+    widePlacement: "top",
+    wideNudge: { x: -10, y: -12 },
+    spotTargets: ["allocation-buttons"],
+  },
+  {
     target: "advance-game",
-    title: "2. Hit Play",
-    body: "Advance time with the selected grain position to the chosen future headline.",
+    title: "3. Hit Play",
+    body: "Hold the selected position until the chosen future headline, then see how the account settles.",
     placement: "right",
     nudge: { x: -18, y: 2 },
     mobilePlacement: "bottom",
@@ -66,4 +78,15 @@ export const futuresDashboardGuideItems: DashboardGuideItem[] = [
     widePlacement: "top",
     wideNudge: { x: 24, y: -10 },
   },
+];
+
+export const futuresCompactDashboardGuideItems: DashboardGuideItem[] = [
+  {
+    ...futuresDashboardGuideItems[0],
+    arrowTargets: ["timeline", "selected-front-page-article"],
+    arrowTargetNudges: { timeline: { y: -2 }, "selected-front-page-article": { x: 24, y: -10 } },
+    body: "Drag the timeline to choose a future grain headline. The larger clipping below shows the selected page.",
+    spotTargets: ["timeline", "selected-front-page-article"],
+  },
+  ...futuresDashboardGuideItems.slice(1),
 ];

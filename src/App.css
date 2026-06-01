@@ -28379,6 +28379,11 @@ button.has-tooltip:disabled {
   width: 218px;
 }
 
+.dashboard-guide-live .storybook-dashboard-callout.allocation-buttons {
+  width: min(286px, calc(100vw - 28px));
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .dashboard-guide-live .storybook-dashboard-guide-spot.chapter-index {
   border-radius: 999px;
 }
@@ -28414,6 +28419,10 @@ button.has-tooltip:disabled {
 
   .dashboard-guide-live .storybook-dashboard-callout.chapter-index {
     width: 202px;
+  }
+
+  .dashboard-guide-live .storybook-dashboard-callout.allocation-buttons {
+    width: 264px;
   }
 
   .dashboard-guide-live .storybook-dashboard-callout strong {
@@ -28463,6 +28472,10 @@ button.has-tooltip:disabled {
     width: 152px;
   }
 
+  .dashboard-guide-live .storybook-dashboard-callout.allocation-buttons {
+    width: min(236px, calc(100vw - 28px));
+  }
+
   .dashboard-guide-live .storybook-dashboard-callout strong {
     font-size: 9.6px;
     line-height: 1.05;
@@ -28510,6 +28523,10 @@ button.has-tooltip:disabled {
 
   .dashboard-guide-live .storybook-dashboard-callout.chapter-index {
     width: 142px;
+  }
+
+  .dashboard-guide-live .storybook-dashboard-callout.allocation-buttons {
+    width: min(218px, calc(100vw - 24px));
   }
 
   .dashboard-guide-live .storybook-dashboard-callout strong {
@@ -34929,6 +34946,154 @@ button.has-tooltip:disabled {
 
   .futures-fortune-shell .futures-preview-contract-note span {
     font-size: 9px;
+  }
+}
+
+.futures-fortune-shell .storybook-play-book.dashboard-book .storybook-one-screen.dashboard-clean.futures-one-screen .futures-date-console.compact-dashboard {
+  height: 100%;
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(7px, 1.05svh, 11px);
+  align-content: stretch;
+}
+
+.futures-fortune-shell .futures-date-banner {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(240, 200, 103, 0.36);
+  border-radius: 13px;
+  padding: 6px 8px;
+  color: #fff8d8;
+  background:
+    linear-gradient(90deg, rgba(247, 231, 180, 0.12), rgba(33, 65, 43, 0.18), rgba(247, 231, 180, 0.12)),
+    rgba(13, 31, 22, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 244, 192, 0.06);
+}
+
+.futures-fortune-shell .futures-date-banner span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.futures-fortune-shell .futures-date-banner span:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.futures-fortune-shell .futures-date-banner b,
+.futures-fortune-shell .futures-date-banner em {
+  color: rgba(247, 231, 180, 0.72);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 1000;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.futures-fortune-shell .futures-date-banner strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff6cf;
+  font-size: clamp(11px, 1.55vw, 15px);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.futures-fortune-shell .futures-date-banner em {
+  border: 1px solid rgba(240, 200, 103, 0.34);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--harvest-gold);
+  background: rgba(54, 36, 17, 0.68);
+}
+
+.futures-fortune-shell .futures-date-console.compact-dashboard .futures-inline-preview-wrap {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 7px;
+}
+
+.futures-fortune-shell .futures-date-console.compact-dashboard .futures-term-chip {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  justify-self: start;
+  max-width: 100%;
+}
+
+.futures-fortune-shell .futures-date-console.compact-dashboard .storybook-current-page.with-headline-image.futures-preview-card {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: stretch;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  border-radius: 16px;
+}
+
+.futures-fortune-shell .compact-dashboard .futures-preview-card .storybook-current-copy {
+  gap: clamp(6px, 1svh, 10px);
+  padding-bottom: clamp(12px, 2svh, 20px);
+}
+
+.futures-fortune-shell .compact-dashboard .futures-preview-card h1 {
+  font-size: clamp(24px, 5.2vw, 52px);
+}
+
+.futures-fortune-shell .compact-dashboard .futures-preview-card p {
+  font-size: clamp(12px, 1.55vw, 16px);
+}
+
+@media (max-width: 700px) {
+  .futures-fortune-shell .storybook-play-book.dashboard-book .storybook-one-screen.dashboard-clean.futures-one-screen {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .futures-fortune-shell .storybook-play-book.dashboard-book .storybook-one-screen.dashboard-clean.futures-one-screen .futures-date-console.compact-dashboard {
+    gap: 6px;
+  }
+
+  .futures-fortune-shell .futures-date-banner {
+    grid-template-columns: minmax(0, 1fr) minmax(74px, auto) minmax(0, 1fr);
+    gap: 5px;
+    padding: 5px 6px;
+  }
+
+  .futures-fortune-shell .futures-date-banner b,
+  .futures-fortune-shell .futures-date-banner em {
+    font-size: 7px;
+  }
+
+  .futures-fortune-shell .futures-date-banner strong {
+    font-size: 9.5px;
+  }
+
+  .futures-fortune-shell .futures-date-banner em {
+    padding: 4px 5px;
+    text-align: center;
+  }
+
+  .futures-fortune-shell .futures-date-console.compact-dashboard .futures-inline-preview-wrap {
+    gap: 5px;
+  }
+
+  .futures-fortune-shell .compact-dashboard .futures-preview-card h1 {
+    font-size: clamp(22px, 7.5vw, 32px);
   }
 }
 

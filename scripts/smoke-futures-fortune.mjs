@@ -8,11 +8,15 @@ const page = await browser.newPage({ viewport: { width: 390, height: 740 } });
 try {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Start Game/i }).click();
-  await page.getByRole("button", { name: /^Play$/i }).click();
   await page.waitForTimeout(600);
   await page.mouse.click(200, 360);
-  await page.getByRole("button", { name: /Open harvest index/i }).click();
-  await page.getByRole("button", { name: /Skip to final harvest/i }).click();
+  const harvestIndexButton = page.getByRole("button", { name: /Open harvest index/i });
+  if (await harvestIndexButton.count()) {
+    await harvestIndexButton.click();
+    await page.getByRole("button", { name: /Skip to final harvest/i }).click();
+  } else {
+    await page.getByRole("slider", { name: /future headline/i }).press("End");
+  }
   await page.getByRole("button", { name: /^Play/i }).first().click();
   await page.waitForTimeout(4300);
 
