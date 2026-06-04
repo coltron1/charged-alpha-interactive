@@ -18,6 +18,7 @@ import {
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  HighScoreToBeatBanner,
   InvestmentLeaderboardOverlay,
   ResultsMoveImpactChart,
   ResultsPerformanceChart,
@@ -35,6 +36,7 @@ import {
   type TimeJumpTargetRecapModel,
   type TimeJumpTransitionModel,
 } from "../../shared/game-ui/TimeJumpTransition";
+import { assetUrl } from "../../shared/assets";
 import { HeadlineEventImage } from "../headline-market/components/HeadlineEventImage";
 import type { HeadlineEvent } from "../headline-market/content/events";
 import { sp500DailySeries } from "../headline-market/content/marketHistory";
@@ -1117,7 +1119,7 @@ function OptionsTimingCoachOverlay({ onStart, result }: { onStart: () => void; r
         <strong>Timing Coach</strong>
       </div>
       <div className="storybook-dashboard-guide-start-hint options-timing-coach-hint">
-        Click anywhere to start the live chart
+        Click anywhere to dismiss this coach and start the live chart immediately
       </div>
       <article className="options-timing-coach-card" aria-label={`${optionChoiceLabels[result.choice]} timing coach`}>
         <header>
@@ -1126,7 +1128,7 @@ function OptionsTimingCoachOverlay({ onStart, result }: { onStart: () => void; r
             {optionChoiceLabels[result.choice]}
           </span>
           <strong>Watch the gold dot</strong>
-          <p>The real chart starts immediately after this card. During the chart, click/tap/Enter again to stop the option.</p>
+          <p>The real chart starts immediately after this card. During the chart, click/tap/Enter again to stop the option, or do nothing and let it run to expiration.</p>
         </header>
         <figure className={`options-timing-coach-chart ${result.choice}`} aria-hidden="true">
           <svg viewBox="0 0 240 120" role="img">
@@ -1168,12 +1170,12 @@ function OptionsTimingCoachOverlay({ onStart, result }: { onStart: () => void; r
           <article>
             <span>Why stop there?</span>
             <strong>{priceTarget.targetLabel}</strong>
-            <p>{copy.reason}</p>
+            <p>{copy.reason} Stopping is optional: if waiting to expiration ends higher, leave the chart alone.</p>
           </article>
         </section>
         <footer>
           <span>This one-time coach appears before the first option chart only.</span>
-          <strong>Dismiss it and the live timing challenge begins right away.</strong>
+          <strong>Click anywhere to dismiss it and the live timing challenge begins right away.</strong>
         </footer>
       </article>
     </div>
@@ -1312,7 +1314,10 @@ function OptionsIntro({
     <main className="app-shell legacy-shell storybook-shell storybook-intro-shell options-fortune-shell">
       <section className={`storybook-book intro ${introPage} options-intro-book`}>
         {introPage === "setup" ? (
-          <article className="storybook-intro-page prologue options-prologue">
+          <article
+            className="storybook-intro-page prologue options-prologue"
+            style={{ "--options-prologue-image": `url("${assetUrl("games/options-fortune/expiration-date-game-image-1.webp")}")` } as CSSProperties}
+          >
             <figure className="options-prologue-art" aria-label="Chicago options desk with future headline sheets">
               <div className="options-floor-board">
                 <span>OEX</span>
@@ -1352,6 +1357,7 @@ function OptionsIntro({
               <Trophy size={16} />
               <span>{perfectTimingQuestion}</span>
             </p>
+            <HighScoreToBeatBanner formatMoney={formatOptionsMoney} gameSlug="expiration-date" />
             <section className="options-howto-flow" aria-label="Expiration Date round steps">
               <span>
                 <b>1</b>
@@ -2456,7 +2462,7 @@ function OptionsFinalScreen({ game, onRestart }: { game: OptionsFortuneState; on
           </button>
           <button className="secondary-action" type="button" onClick={() => setLeaderboardOpen(true)}>
             <Trophy size={18} />
-            High Scores
+            Post Your Score and See How You Rank
           </button>
           <a className="primary-action legacy-primary" href="/games/front-page-fortune">
             Play Next: Front Page Fortune

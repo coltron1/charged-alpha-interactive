@@ -1714,12 +1714,15 @@ button:disabled {
 .primary-action,
 .secondary-action {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 14px;
   color: #071015;
   background: #80f1dd;
+  line-height: 1.12;
+  text-align: center;
 }
 
 .secondary-action {
@@ -9406,13 +9409,16 @@ button.has-tooltip:disabled {
 }
 
 .storybook-front-page-link {
+  display: block;
+  width: 100%;
   margin: 0;
   border: 0;
-  padding: 0;
+  padding: 0 0 5px;
   color: inherit;
   background: transparent;
   font: inherit;
-  line-height: inherit;
+  line-height: 1.08;
+  overflow: visible;
   text-align: left;
   text-decoration: underline;
   text-decoration-color: rgba(141, 46, 53, 0.34);
@@ -11670,9 +11676,9 @@ button.has-tooltip:disabled {
   position: relative;
   z-index: 3;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .storybook-allocation-wheel-item strong {
@@ -12045,6 +12051,7 @@ button.has-tooltip:disabled {
 
 .storybook-confirm-play-button {
   flex-wrap: wrap;
+  min-height: 54px;
   border: 1px solid rgba(158, 216, 191, 0.58);
   color: #f4fff8;
   line-height: 1.12;
@@ -15569,14 +15576,16 @@ button.has-tooltip:disabled {
 
 .storybook-final-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.8fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
   gap: 8px;
 }
 
 .storybook-final-actions button,
 .storybook-final-actions a {
   justify-content: center;
+  min-height: 48px;
   text-decoration: none;
+  white-space: normal;
 }
 
 .leaderboard-overlay {
@@ -15780,6 +15789,50 @@ button.has-tooltip:disabled {
 .storybook-leaderboard-submit button {
   min-height: 42px;
   white-space: nowrap;
+}
+
+.storybook-high-score-banner {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  border: 1px solid rgba(246, 210, 117, 0.42);
+  border-radius: 12px;
+  padding: 9px 11px;
+  color: #fff8e8;
+  background:
+    linear-gradient(90deg, rgba(246, 210, 117, 0.16), rgba(88, 226, 167, 0.08)),
+    rgba(3, 9, 9, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.05);
+  text-align: center;
+}
+
+.storybook-high-score-banner svg {
+  flex: 0 0 auto;
+  color: #f6d275;
+}
+
+.storybook-high-score-banner span {
+  color: #f6d275;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.storybook-high-score-banner strong {
+  color: #fffdf2;
+  font-size: clamp(18px, 2.8vw, 28px);
+  line-height: 1;
+}
+
+.storybook-high-score-banner em {
+  color: #d9ccb4;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .storybook-leaderboard-submit > p {
@@ -23118,7 +23171,7 @@ button.has-tooltip:disabled {
   grid-template-rows: auto auto;
   gap: 1px 6px;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(226, 190, 111, 0.3);
   border-radius: 11px;
   padding: 5px 10px 5px 7px;
@@ -23193,7 +23246,7 @@ button.has-tooltip:disabled {
 .storybook-dashboard-allocation-choice span,
 .storybook-dashboard-allocation-choice em {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: clip;
 }
 
@@ -23217,9 +23270,9 @@ button.has-tooltip:disabled {
   font-size: 8.5px;
   font-weight: 850;
   line-height: 1.05;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .storybook-dashboard-allocation-choice.has-tax span {
@@ -23231,6 +23284,7 @@ button.has-tooltip:disabled {
   top: 5px;
   right: 5px;
   width: 8px;
+  max-width: 8px;
   height: 8px;
   min-height: 0;
   border: 1px solid rgba(246, 210, 117, 0.42);
@@ -23238,11 +23292,13 @@ button.has-tooltip:disabled {
   padding: 0;
   color: transparent;
   background: transparent;
+  box-sizing: border-box;
   font-size: 0;
   font-style: normal;
   font-weight: 1000;
   line-height: 0;
   opacity: 0;
+  overflow: hidden;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -23940,7 +23996,7 @@ button.has-tooltip:disabled {
   }
 
   .storybook-dashboard-allocation-choice span,
-  .storybook-dashboard-allocation-choice em {
+  .storybook-dashboard-allocation-choice span {
     font-size: 7.5px;
   }
 
@@ -24087,9 +24143,9 @@ button.has-tooltip:disabled {
   }
 
   .storybook-dashboard-allocation-choice em {
-    min-height: 13px;
-    padding: 1px 3px;
-    font-size: 6.4px;
+    min-height: 0;
+    padding: 0;
+    font-size: 0;
   }
 
   .storybook-selected-allocation-banner {
@@ -24376,7 +24432,7 @@ button.has-tooltip:disabled {
 
 .storybook-one-screen.dashboard-clean .storybook-dashboard-allocation-choice {
   min-height: clamp(44px, 5.8svh, 62px);
-  max-height: 64px;
+  max-height: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto auto;
@@ -24508,9 +24564,9 @@ button.has-tooltip:disabled {
 }
 
 .storybook-one-screen.dashboard-clean .options-choice-strip .storybook-dashboard-allocation-choice {
-  height: 58px;
+  height: auto;
   max-height: none;
-  min-height: 58px;
+  min-height: 62px;
 }
 
 .storybook-one-screen.dashboard-clean .options-choice-strip .storybook-dashboard-allocation-choice strong {
@@ -24523,11 +24579,11 @@ button.has-tooltip:disabled {
 }
 
 .storybook-one-screen.dashboard-clean .options-choice-strip .storybook-dashboard-allocation-choice span {
-  overflow: hidden;
+  overflow: visible;
   font-size: clamp(6.8px, 0.72vw, 7.8px);
   overflow-wrap: normal;
   text-overflow: clip;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .options-ticket-playground {
@@ -25353,7 +25409,7 @@ button.has-tooltip:disabled {
   color: #fff8e8;
   font-size: clamp(24px, 4vw, 38px);
   font-weight: 1000;
-  line-height: 0.96;
+  line-height: 1.06;
 }
 
 .options-timing-coach-card header p,
@@ -25909,7 +25965,7 @@ button.has-tooltip:disabled {
 .options-selected-strategy-banner.expanded-ticket-banner {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(185px, 0.82fr) minmax(250px, 1.08fr) minmax(118px, 0.34fr);
+  grid-template-columns: minmax(198px, 0.82fr) minmax(250px, 1.02fr) minmax(148px, 0.42fr);
   grid-template-rows: auto auto;
   gap: 8px;
   align-items: stretch;
@@ -25935,7 +25991,12 @@ button.has-tooltip:disabled {
 .options-selected-strategy-banner.expanded-ticket-banner .options-choice-strip {
   grid-column: 1;
   grid-row: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-self: stretch;
+}
+
+.options-selected-strategy-banner.expanded-ticket-banner .options-choice-strip .storybook-dashboard-allocation-choice {
+  min-height: 54px;
 }
 
 .options-selected-strategy-banner.expanded-ticket-banner .options-ticket-playground {
@@ -25962,7 +26023,7 @@ button.has-tooltip:disabled {
   grid-column: 3;
   grid-row: 1 / span 2;
   align-self: stretch;
-  min-height: 0;
+  min-height: 100%;
   border-radius: 12px;
 }
 
@@ -26614,6 +26675,14 @@ button.has-tooltip:disabled {
 }
 
 .options-fortune-shell .options-banner-play-button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  justify-items: center;
+  min-width: 0;
+  gap: 4px 8px;
+  padding: 12px 10px;
   border-color: rgba(88, 226, 167, 0.78);
   color: #f6fff9;
   background:
@@ -26625,6 +26694,22 @@ button.has-tooltip:disabled {
     0 0 24px rgba(88, 226, 167, 0.22),
     0 12px 24px rgba(0, 0, 0, 0.34);
   animation: options-green-play-pulse 2.7s ease-in-out infinite;
+}
+
+.options-fortune-shell .options-banner-play-button span {
+  grid-column: 1 / -1;
+  font-size: clamp(18px, 2.1vw, 27px);
+  line-height: 0.95;
+}
+
+.options-fortune-shell .options-banner-play-button small {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  font-size: clamp(9px, 0.95vw, 12px);
+  line-height: 1.15;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .options-fortune-shell .options-banner-play-button:hover,
@@ -27201,7 +27286,7 @@ button.has-tooltip:disabled {
   }
 
   .options-selected-strategy-banner.expanded-ticket-banner .options-choice-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .options-selected-strategy-banner.expanded-ticket-banner .options-banner-play-button {
@@ -29364,7 +29449,7 @@ button.has-tooltip:disabled {
   background:
     linear-gradient(90deg, rgba(3, 7, 8, 0.86) 0%, rgba(3, 7, 8, 0.46) 34%, rgba(3, 7, 8, 0.18) 58%, rgba(3, 7, 8, 0.66) 100%),
     linear-gradient(180deg, rgba(3, 7, 8, 0.28) 0%, rgba(3, 7, 8, 0.06) 46%, rgba(3, 7, 8, 0.74) 100%),
-    url("../games/options-fortune/expiration-date-game-image-1.webp");
+    var(--options-prologue-image);
   background-position:
     center,
     center,
@@ -31744,6 +31829,12 @@ button.has-tooltip:disabled {
   line-height: 1.22;
 }
 
+.futures-lesson-header > small {
+  color: rgba(246, 237, 217, 0.72);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .futures-transaction-visual {
   display: grid;
   grid-template-rows: auto auto auto auto;
@@ -33249,8 +33340,18 @@ button.has-tooltip:disabled {
   margin: 0;
 }
 
+.sector-oracle-intro-copy .storybook-high-score-banner {
+  justify-self: start;
+  max-width: 100%;
+  border-color: rgba(213, 169, 79, 0.38);
+  background:
+    linear-gradient(90deg, rgba(213, 169, 79, 0.14), rgba(105, 194, 150, 0.08)),
+    rgba(0, 0, 0, 0.18);
+}
+
 .sector-oracle-primary {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -33262,6 +33363,8 @@ button.has-tooltip:disabled {
   color: #181005;
   font-weight: 1000;
   letter-spacing: 0;
+  line-height: 1.12;
+  text-align: center;
   box-shadow: 0 15px 28px rgba(0, 0, 0, 0.28);
   cursor: pointer;
 }
@@ -34153,6 +34256,11 @@ button.has-tooltip:disabled {
 
 .sector-oracle-final-actions a {
   text-decoration: none;
+}
+
+.sector-oracle-final-actions .sector-oracle-primary {
+  min-width: min(100%, 176px);
+  white-space: normal;
 }
 
 .sector-oracle-primary.secondary {

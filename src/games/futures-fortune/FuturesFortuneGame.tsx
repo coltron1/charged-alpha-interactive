@@ -26,6 +26,7 @@ import type {
 } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  HighScoreToBeatBanner,
   InvestmentLeaderboardOverlay,
   ResultsMoveImpactChart,
   ResultsPerformanceChart,
@@ -1070,6 +1071,7 @@ function FuturesIntro({
             <span>Start on Riley's dashboard: choose a future clipping, pick Treasury Bills or one grain future, then let time run.</span>
             <span>{perfectTimingQuestion}</span>
           </div>
+          <HighScoreToBeatBanner formatMoney={formatFuturesMoney} gameSlug="harvest-ledger" />
           <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play" type="button" onClick={onBegin}>
             <Play size={18} />
             <span>Start Game</span>
@@ -2006,7 +2008,7 @@ function FuturesLessonPopup({
   onClose: () => void;
 }) {
   return (
-    <aside className={`futures-lesson-popup fullscreen ${lesson.tone}`} aria-label="Futures financial math" aria-modal="true" role="dialog">
+    <aside className={`futures-lesson-popup fullscreen ${lesson.tone}`} aria-label="Futures financial math" aria-modal="true" role="dialog" onClick={onClose}>
       <button className="futures-lesson-close" type="button" onClick={onClose} aria-label="Continue to the next headline">
         <X size={14} />
         <span>Continue</span>
@@ -2015,6 +2017,7 @@ function FuturesLessonPopup({
         <header className="futures-lesson-header">
           <span>{lesson.title}</span>
           <strong>{lesson.formula}</strong>
+          <small>Click anywhere to close and continue.</small>
         </header>
 
         <FuturesTransactionVisual result={result} />
@@ -2172,7 +2175,7 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
           </button>
           <button className="secondary-action" type="button" onClick={() => setLeaderboardOpen(true)}>
             <Trophy size={18} />
-            High Scores
+            Post Your Score and See How You Rank
           </button>
           <a className="primary-action legacy-primary" href="/games/sector-oracle">
             Play Next: Sector Oracle

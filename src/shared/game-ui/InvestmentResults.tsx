@@ -1,4 +1,4 @@
-import { Minimize2, Send } from "lucide-react";
+import { Minimize2, Send, Trophy } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 export type ResultsChartPoint = {
@@ -352,6 +352,52 @@ async function fetchPublicLeaderboardEntries(gameSlug: string, fallbackDetail: s
     .filter((entry): entry is LeaderboardSubmittedEntry => Boolean(entry));
 }
 
+export function HighScoreToBeatBanner({
+  formatMoney,
+  gameSlug,
+}: {
+  formatMoney: (value: number) => string;
+  gameSlug: string;
+}) {
+  const [scoreToBeat, setScoreToBeat] = useState<LeaderboardSubmittedEntry | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchPublicLeaderboardEntries(gameSlug, "")
+      .then((entries) => {
+        if (cancelled || !entries || entries.length === 0) {
+          return;
+        }
+
+        const [topScore] = [...entries].sort((a, b) => b.score - a.score);
+        setScoreToBeat(topScore ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setScoreToBeat(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gameSlug]);
+
+  if (!scoreToBeat) {
+    return null;
+  }
+
+  return (
+    <aside className="storybook-high-score-banner" aria-label="Current high score to beat">
+      <Trophy size={17} aria-hidden="true" />
+      <span>Current score to beat</span>
+      <strong>{formatMoney(scoreToBeat.score)}</strong>
+      <em>{scoreToBeat.name}</em>
+    </aside>
+  );
+}
+
 async function postPublicLeaderboardEntry({
   currentRunDetail,
   displayName,
@@ -547,7 +593,7 @@ export function InvestmentLeaderboardOverlay({
   };
 
   return (
-    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label={`${gameTitle} high scores`}>
+    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label={`${gameTitle} leaderboard`}>
       <section className="storybook-leaderboard-page">
         <button className="storybook-minimize" type="button" onClick={onClose} aria-label="Close high scores">
           <Minimize2 size={16} />
@@ -555,7 +601,7 @@ export function InvestmentLeaderboardOverlay({
         </button>
         <header className="storybook-leaderboard-head">
           <p className="eyebrow">{gameTitle}</p>
-          <h2>High Scores</h2>
+          <h2>Post Your Score</h2>
           <span>Your run ranks #{Math.max(1, previewRank)} against this week's players and benchmarks.</span>
         </header>
 

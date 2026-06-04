@@ -30,6 +30,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trackGameEvent } from "../../shared/analytics/events";
 import { assetUrl } from "../../shared/assets";
 import { educationalDisclaimer } from "../../shared/compliance/copy";
+import { HighScoreToBeatBanner } from "../../shared/game-ui/InvestmentResults";
 import { TargetGuideOverlay } from "../../shared/game-ui/TargetGuideOverlay";
 import { HeadlineEventImage } from "./components/HeadlineEventImage";
 import type { HeadlineEvent } from "./content/events";
@@ -2211,6 +2212,7 @@ function StorybookStart({
               <Trophy size={16} />
               <span>{perfectTimingQuestion}</span>
             </p>
+            <HighScoreToBeatBanner formatMoney={formatMoney} gameSlug="front-page-fortune" />
             <div className="storybook-howto-dashboard-map">
               <figure className="storybook-howto-dashboard-shot wide">
                 <img
@@ -3293,7 +3295,7 @@ function FinalLeaderboardOverlay({
   };
 
   return (
-    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label="Front Page Fortune high scores">
+    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label="Front Page Fortune leaderboard">
       <section className="storybook-leaderboard-page">
         <button className="storybook-minimize" type="button" onClick={onClose} aria-label="Close high scores">
           <Minimize2 size={16} />
@@ -3301,7 +3303,7 @@ function FinalLeaderboardOverlay({
         </button>
         <header className="storybook-leaderboard-head">
           <p className="eyebrow">Front Page Fortune</p>
-          <h2>High Scores</h2>
+          <h2>Post Your Score</h2>
           <span>Your run ranks #{Math.max(1, previewRank)} against this week's players and family benchmarks.</span>
         </header>
 
@@ -3445,7 +3447,7 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
           </button>
           <button className="secondary-action" type="button" onClick={() => setLeaderboardOpen(true)}>
             <Trophy size={18} />
-            High Scores
+            Post Your Score and See How You Rank
           </button>
           <a className="primary-action legacy-primary" href="/games/harvest-ledger">
             Play Next: Harvest Ledger

@@ -29,7 +29,7 @@ import type {
 } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { assetUrl } from "../../shared/assets";
-import { InvestmentLeaderboardOverlay, type LeaderboardSubmittedEntry } from "../../shared/game-ui/InvestmentResults";
+import { HighScoreToBeatBanner, InvestmentLeaderboardOverlay, type LeaderboardSubmittedEntry } from "../../shared/game-ui/InvestmentResults";
 import { TargetGuideOverlay, type DashboardGuideItem } from "../../shared/game-ui/TargetGuideOverlay";
 import {
   sectorChoiceDescriptions,
@@ -538,6 +538,7 @@ function SectorOracleIntro({ onBegin }: { onBegin: () => void }) {
             <Trophy size={18} />
             <p>{perfectTimingQuestion}</p>
           </div>
+          <HighScoreToBeatBanner formatMoney={formatSectorMoney} gameSlug="sector-oracle" />
           <button className="sector-oracle-primary" type="button" onClick={onBegin}>
             Start playing
             <ChevronRight size={18} />
@@ -1559,7 +1560,7 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
         </div>
         <div className="sector-oracle-final-actions">
           <button className="sector-oracle-primary" type="button" onClick={() => setLeaderboardOpen(true)}>
-            High Scores
+            Post Your Score and See How You Rank
             <Trophy size={18} />
           </button>
           <a className="sector-oracle-primary" href="/games/expiration-date">
