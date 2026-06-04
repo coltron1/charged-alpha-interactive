@@ -508,6 +508,8 @@ function createSectorReelTransition(game: SectorOracleState, advanced: SectorOra
 }
 
 function SectorOracleIntro({ onBegin }: { onBegin: () => void }) {
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatSectorDate(sectorOracleStartDate)} to ${formatSectorDate(sectorOracleEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
+
   return (
     <main className="sector-oracle-shell intro">
       <section className="sector-oracle-intro-panel">
@@ -531,6 +533,10 @@ function SectorOracleIntro({ onBegin }: { onBegin: () => void }) {
             <span><WalletCards size={15} /> $100,000 inheritance</span>
             <span><BadgeDollarSign size={15} /> Switching can trigger 15% tax</span>
             <span><Trophy size={15} /> Beat simple benchmarks</span>
+          </div>
+          <div className="sector-oracle-perfect-question">
+            <Trophy size={18} />
+            <p>{perfectTimingQuestion}</p>
           </div>
           <button className="sector-oracle-primary" type="button" onClick={onBegin}>
             Start playing
@@ -1523,7 +1529,7 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
     { label: "Balanced", value: game.balancedBenchmark },
     { label: "Always Tech", value: game.techBenchmark },
     { label: "Always Bonds", value: game.bondsBenchmark },
-    { label: "Perfect Oracle", value: game.perfectOracle },
+    { label: "Perfect tape", value: game.perfectOracle },
   ];
 
   return (
@@ -1597,7 +1603,7 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
             {
               detail: "Best sector each window",
               id: "sector-perfect-benchmark",
-              label: "Perfect Oracle",
+              label: "Perfect tape",
               returnPercent: ((game.perfectOracle - sectorOracleStartingBankroll) / sectorOracleStartingBankroll) * 100,
               score: game.perfectOracle,
             },

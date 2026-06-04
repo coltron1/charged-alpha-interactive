@@ -52,6 +52,7 @@ import {
   getDecisionPositions,
   getDefaultCashPercent,
   getFinalRank,
+  calculateBenchmarkFinals,
   getAnnualCashBondYield,
   calculateCashBondReturnBetween,
   getCashBondReturn,
@@ -806,6 +807,7 @@ async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<Leaderboar
 }
 
 function getLeaderboardRows(game: HeadlineMarketState, entries: LeaderboardEntry[], previewEntry: LeaderboardEntry | null): LeaderboardRow[] {
+  const benchmarks = calculateBenchmarkFinals(game.timeline);
   const rows: LeaderboardRow[] = [
     {
       id: "eli-benchmark",
@@ -822,6 +824,14 @@ function getLeaderboardRows(game: HeadlineMarketState, entries: LeaderboardEntry
       score: game.sisterBankroll,
       returnPercent: getStartingGain(game.sisterBankroll),
       detail: "Gold jewelry tracked to gold",
+    },
+    {
+      id: "perfect-tape-benchmark",
+      kind: "benchmark",
+      label: "Perfect tape",
+      score: benchmarks.perfectNewspaperTiming,
+      returnPercent: getStartingGain(benchmarks.perfectNewspaperTiming),
+      detail: "Best allocation each jump",
     },
   ];
 
@@ -2163,6 +2173,7 @@ function StorybookStart({
   const defaultGoldAmount = (startingBankroll * game.defaultGoldPercent) / 100;
   const defaultCashAmount = (startingBankroll * defaultCashPercent) / 100;
   const prologueDate = formatDateWithWeekday(game.timeline.inheritanceDate);
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatDateLong(game.timeline.inheritanceDate)} to ${formatDateLong(game.timeline.periodEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
   const isTransitioning = introTransition !== "none";
 
   return (
@@ -2196,6 +2207,10 @@ function StorybookStart({
           <article className="storybook-intro-page rules">
             <h1>How To Play</h1>
             <p className="storybook-howto-goal">Goal: Grow Grandpa's {formatMoney(startingBankroll)} by deciding how markets react to future front pages.</p>
+            <p className="storybook-perfect-question">
+              <Trophy size={16} />
+              <span>{perfectTimingQuestion}</span>
+            </p>
             <div className="storybook-howto-dashboard-map">
               <figure className="storybook-howto-dashboard-shot wide">
                 <img
@@ -3353,6 +3368,8 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
   const performancePoints = getFinalPerformancePoints(game);
   const profitableMoves = game.results.filter((result) => result.profit >= 0).length;
   const reallocatedMoves = game.results.filter((result) => result.isReallocation).length;
+  const benchmarks = calculateBenchmarkFinals(game.timeline);
+  const perfectTimingGain = (benchmarks.perfectNewspaperTiming / startingBankroll - 1) * 100;
 
   return (
     <main className="app-shell legacy-shell storybook-shell final">
@@ -3385,6 +3402,14 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
               <em>{formatPercent(sisterGain)} tracked to gold</em>
               <small className={game.bankroll >= game.sisterBankroll ? "positive" : "negative"}>
                 {getPlayerStrategyGap(game.bankroll, game.sisterBankroll, "Ruth")}
+              </small>
+            </article>
+            <article>
+              <span>Perfect tape</span>
+              <strong>{formatMoney(benchmarks.perfectNewspaperTiming)}</strong>
+              <em>{formatPercent(perfectTimingGain)} best allocation each jump</em>
+              <small className={game.bankroll >= benchmarks.perfectNewspaperTiming ? "positive" : "negative"}>
+                {getPlayerStrategyGap(game.bankroll, benchmarks.perfectNewspaperTiming, "Perfect tape")}
               </small>
             </article>
           </div>

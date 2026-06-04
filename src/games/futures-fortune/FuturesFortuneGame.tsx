@@ -1046,6 +1046,8 @@ function FuturesIntro({
   game: FuturesFortuneState;
   onBegin: () => void;
 }) {
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatDateLong(futuresStartDate)} to ${formatDateLong(futuresEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
+
   return (
     <main className="app-shell legacy-shell storybook-shell storybook-intro-shell futures-fortune-shell">
       <section className="storybook-book intro setup futures-intro-book">
@@ -1066,6 +1068,7 @@ function FuturesIntro({
           <div className="storybook-chapter-one-cards">
             <span>{futuresStory.hook}</span>
             <span>Start on Riley's dashboard: choose a future clipping, pick Treasury Bills or one grain future, then let time run.</span>
+            <span>{perfectTimingQuestion}</span>
           </div>
           <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play" type="button" onClick={onBegin}>
             <Play size={18} />

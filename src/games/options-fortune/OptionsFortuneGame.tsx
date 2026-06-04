@@ -1306,6 +1306,7 @@ function OptionsIntro({
       title: "Safe slow growth",
     },
   ];
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatDateLong(optionsStartDate)} to ${formatDateLong(optionsEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
 
   return (
     <main className="app-shell legacy-shell storybook-shell storybook-intro-shell options-fortune-shell">
@@ -1347,6 +1348,10 @@ function OptionsIntro({
           <article className="storybook-intro-page rules options-rules">
             <h1>How To Play</h1>
             <p className="storybook-howto-goal">Pick a future headline. Buy one ticket. Watch the chart. Green means the ticket can win.</p>
+            <p className="storybook-perfect-question options-perfect-question">
+              <Trophy size={16} />
+              <span>{perfectTimingQuestion}</span>
+            </p>
             <section className="options-howto-flow" aria-label="Expiration Date round steps">
               <span>
                 <b>1</b>

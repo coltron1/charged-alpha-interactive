@@ -6856,6 +6856,38 @@ button.has-tooltip:disabled {
   box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.04);
 }
 
+.storybook-perfect-question {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  border: 1px dashed rgba(246, 210, 117, 0.38);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #fff8e8;
+  background:
+    linear-gradient(90deg, rgba(246, 210, 117, 0.14), rgba(158, 216, 191, 0.08)),
+    rgba(8, 12, 16, 0.42);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(12px, 1.12vw, 15px);
+  font-weight: 900;
+  line-height: 1.22;
+  text-align: left;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 232, 0.04),
+    0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.storybook-perfect-question svg {
+  flex: 0 0 auto;
+  color: #f6d275;
+}
+
+.storybook-perfect-question span {
+  min-width: 0;
+}
+
 .storybook-howto-dashboard-map {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(92px, 0.28fr);
@@ -25025,6 +25057,11 @@ button.has-tooltip:disabled {
   font-size: clamp(12px, 1.15vw, 15px);
 }
 
+.options-rules .storybook-perfect-question {
+  padding: 6px 8px;
+  font-size: clamp(11px, 1.02vw, 13px);
+}
+
 .options-howto-flow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -33185,6 +33222,31 @@ button.has-tooltip:disabled {
   color: rgba(246, 236, 210, 0.82);
   font-size: 12px;
   font-weight: 800;
+}
+
+.sector-oracle-perfect-question {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px dashed rgba(213, 169, 79, 0.42);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background:
+    linear-gradient(90deg, rgba(213, 169, 79, 0.14), rgba(105, 194, 150, 0.08)),
+    rgba(0, 0, 0, 0.2);
+  color: #fff8df;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.22;
+}
+
+.sector-oracle-perfect-question svg {
+  flex: 0 0 auto;
+  color: #d5a94f;
+}
+
+.sector-oracle-perfect-question p {
+  margin: 0;
 }
 
 .sector-oracle-primary {
