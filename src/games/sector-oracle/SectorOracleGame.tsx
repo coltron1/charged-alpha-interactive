@@ -1556,6 +1556,10 @@ function SectorFinalScreen({ game, onReset }: { game: SectorOracleState; onReset
             High Scores
             <Trophy size={18} />
           </button>
+          <a className="sector-oracle-primary" href="/games/expiration-date">
+            Play Next: Expiration Date
+            <ChevronRight size={18} />
+          </a>
           <button className="sector-oracle-primary secondary" type="button" onClick={onReset}>
             Play again
             <RotateCcw size={18} />

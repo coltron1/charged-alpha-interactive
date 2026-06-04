@@ -85,7 +85,7 @@ export const futuresCompactDashboardGuideItems: DashboardGuideItem[] = [
     ...futuresDashboardGuideItems[0],
     arrowTargets: ["timeline", "selected-front-page-article"],
     arrowTargetNudges: { timeline: { y: -2 }, "selected-front-page-article": { x: 24, y: -10 } },
-    body: "Drag the timeline to choose a future grain headline. The larger clipping below shows the selected page.",
+    body: "Drag the timeline to choose a future grain headline. The larger clipping above shows the selected page.",
     spotTargets: ["timeline", "selected-front-page-article"],
   },
   ...futuresDashboardGuideItems.slice(1),

@@ -1509,18 +1509,14 @@ function FuturesSelectedStrategyBanner({
 function FuturesDateConsole({
   compact,
   game,
-  lastResult,
   onChoose,
-  onOpenArticle,
   onOpenIndex,
   onPlay,
   onSelectTarget,
 }: {
   compact: boolean;
   game: FuturesFortuneState;
-  lastResult?: FuturesResult;
   onChoose: (choice: FuturesChoice) => void;
-  onOpenArticle: () => void;
   onOpenIndex: () => void;
   onPlay: () => void;
   onSelectTarget: (targetIndex: number) => void;
@@ -1637,11 +1633,8 @@ function FuturesDateConsole({
             </span>
           </div>
           <FuturesTimeline game={game} onSelectTarget={onSelectTarget} />
-          <div className="futures-inline-preview-wrap">
-            <div className="futures-term-chip" aria-label="Selected futures contract term">
-              {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
-            </div>
-            <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={onOpenArticle} />
+          <div className="futures-term-chip" aria-label="Selected futures contract term">
+            {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
           </div>
         </>
       ) : (
@@ -1755,10 +1748,6 @@ function FuturesPreviewCard({
           </div>
         )}
         <p>{getPreviewParagraph(event, target.isFinal)}</p>
-        <div className="futures-preview-contract-note">
-          <strong>Contract terms</strong>
-          <span>{futuresContractRuleSummary}</span>
-        </div>
       </div>
     </article>
   );
@@ -2182,6 +2171,10 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
             <Trophy size={18} />
             High Scores
           </button>
+          <a className="primary-action legacy-primary" href="/games/sector-oracle">
+            Play Next: Sector Oracle
+            <ChevronRight size={18} />
+          </a>
           <button className="secondary-action" type="button" onClick={onRestart}>
             <RotateCcw size={18} />
             Play It Again
@@ -2374,13 +2367,12 @@ export function FuturesFortuneGame() {
         </header>
 
         <div className="storybook-one-screen dashboard-clean futures-one-screen">
+          {compactDashboard && <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={() => setOverlay("article")} />}
           <FuturesDateConsole
             compact={compactDashboard}
             game={game}
-            lastResult={lastResult}
             onChoose={(choice) => setGame((current) => setFuturesChoice(current, choice))}
             onOpenIndex={() => setOverlay("index")}
-            onOpenArticle={() => setOverlay("article")}
             onPlay={play}
             onSelectTarget={(targetIndex) => setGame((current) => setFuturesTargetIndex(current, targetIndex))}
           />
