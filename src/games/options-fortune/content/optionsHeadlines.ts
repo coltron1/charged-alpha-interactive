@@ -356,7 +356,7 @@ export function buildOptionsHeadlineEvents(): HeadlineEvent[] {
       headline: seed.headline,
       deck: seed.deck,
       setup: seed.lede,
-      marketQuestion: "Does Mara buy calls, buy puts, buy a straddle, or sit in Treasury bills until the selected expiration?",
+      marketQuestion: "Does Mara choose a Call Option, Put Option, Straddle, or T-Bills until the selected expiration?",
       lifeNote: seed.lifeNote,
       startClose: startPrice.value,
       endClose: endPrice.value,

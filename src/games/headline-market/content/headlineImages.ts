@@ -203,6 +203,94 @@ const directImageOverrides: Record<string, Omit<HeadlineImageAsset, "alt">> = {
   },
 };
 
+type DirectHeadlineImage = Omit<HeadlineImageAsset, "alt">;
+type DirectHeadlineImageBase = Omit<DirectHeadlineImage, "query">;
+
+const optionsImageLibrary = {
+  bearStearns: {
+    credit: "Wikimedia Commons",
+    license: "CC BY-SA 3.0",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:383_Madison_Ave_New_York.jpg",
+    title: "383 Madison Ave New York",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/383_Madison_Ave_New_York.jpg/960px-383_Madison_Ave_New_York.jpg",
+  },
+  fedChicago: {
+    credit: "Wikimedia Commons",
+    license: "CC BY-SA 4.0",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:Federal_Reserve_Bank_of_Chicago_(51574643886).jpg",
+    title: "Federal Reserve Bank of Chicago",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Federal_Reserve_Bank_of_Chicago_%2851574643886%29.jpg/960px-Federal_Reserve_Bank_of_Chicago_%2851574643886%29.jpg",
+  },
+  hurricaneKatrina: {
+    credit: "Wikimedia Commons",
+    license: "Public domain",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:US_Navy_050829-N-0000W-001_GOES-12_Satellite_image_of_Hurricane_Katrina.jpg",
+    title: "GOES-12 satellite image of Hurricane Katrina",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/US_Navy_050829-N-0000W-001_GOES-12_Satellite_image_of_Hurricane_Katrina.jpg/960px-US_Navy_050829-N-0000W-001_GOES-12_Satellite_image_of_Hurricane_Katrina.jpg",
+  },
+  iraqBaghdad: {
+    credit: "Wikimedia Commons",
+    license: "CC BY-SA 3.0",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:Iraq_invasion_Baghdad_2003_(3).jpg",
+    title: "Iraq invasion Baghdad 2003",
+    url: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Iraq_invasion_Baghdad_2003_%283%29.jpg",
+  },
+  nasdaqMarketSite: {
+    credit: "Wikimedia Commons",
+    license: "CC BY 2.0",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:NASDAQ_Market_Site_201506.jpg",
+    title: "NASDAQ Market Site 201506",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/NASDAQ_Market_Site_201506.jpg/960px-NASDAQ_Market_Site_201506.jpg",
+  },
+  nyseExterior: {
+    credit: "Wikimedia Commons",
+    license: "CC BY 2.0",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:New_York_Stock_Exchange_(6279266131).jpg",
+    title: "New York Stock Exchange",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/New_York_Stock_Exchange_%286279266131%29.jpg/960px-New_York_Stock_Exchange_%286279266131%29.jpg",
+  },
+  nyseTradingFloor: {
+    credit: "Wikimedia Commons",
+    license: "Public domain",
+    pageUrl: "https://commons.wikimedia.org/wiki/File:No_Known_Restrictions_Trading_Floor,_New_York_Stock_Exchange_(Highsmith_LOC)_(6718386525).jpg",
+    title: "Trading Floor, New York Stock Exchange",
+    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/No_Known_Restrictions_Trading_Floor%2C_New_York_Stock_Exchange_%28Highsmith_LOC%29_%286718386525%29.jpg/960px-No_Known_Restrictions_Trading_Floor%2C_New_York_Stock_Exchange_%28Highsmith_LOC%29_%286718386525%29.jpg",
+  },
+} satisfies Record<string, DirectHeadlineImageBase>;
+
+function makeOptionsDirectImage(key: keyof typeof optionsImageLibrary, query: string): DirectHeadlineImage {
+  return {
+    ...optionsImageLibrary[key],
+    query,
+  };
+}
+
+const optionsDirectImageOverrides: Record<string, DirectHeadlineImage> = {
+  "spx-1997-trading-curbs": makeOptionsDirectImage("nyseTradingFloor", "direct options trading curbs NYSE floor"),
+  "spx-1998-crosses-1000": makeOptionsDirectImage("nyseExterior", "direct options S&P 500 1000 NYSE"),
+  "spx-1998-russia-ltcm": makeOptionsDirectImage("nyseTradingFloor", "direct options Russia LTCM crisis trading floor"),
+  "spx-1998-fed-cuts": makeOptionsDirectImage("fedChicago", "direct options Federal Reserve rate cuts"),
+  "spx-1999-dow-10000": makeOptionsDirectImage("nyseExterior", "direct options Dow 10000 market milestone"),
+  "spx-2000-peak": makeOptionsDirectImage("nasdaqMarketSite", "direct options dot-com peak Nasdaq"),
+  "spx-2000-nasdaq-break": makeOptionsDirectImage("nasdaqMarketSite", "direct options Nasdaq dot-com break"),
+  "spx-2001-fed-surprise": makeOptionsDirectImage("fedChicago", "direct options Fed surprise cut"),
+  "spx-2001-nyse-reopens": makeOptionsDirectImage("nyseExterior", "direct options NYSE reopens September 2001"),
+  "spx-2001-enron": makeOptionsDirectImage("nyseTradingFloor", "direct options Enron market trust shock"),
+  "spx-2002-worldcom": makeOptionsDirectImage("nyseTradingFloor", "direct options WorldCom accounting shock"),
+  "spx-2002-reform-rally": makeOptionsDirectImage("nyseTradingFloor", "direct options corporate reform rally"),
+  "spx-2002-bear-low": makeOptionsDirectImage("nyseExterior", "direct options dot-com bear market low"),
+  "spx-2003-war-low": makeOptionsDirectImage("iraqBaghdad", "direct options Iraq war premium"),
+  "spx-2003-recovery-rally": makeOptionsDirectImage("nyseExterior", "direct options recovery rally"),
+  "spx-2004-fed-hike-cycle": makeOptionsDirectImage("fedChicago", "direct options Federal Reserve hike cycle"),
+  "spx-2005-katrina-oil": makeOptionsDirectImage("hurricaneKatrina", "direct options Hurricane Katrina oil shock"),
+  "spx-2006-inflation-selloff": makeOptionsDirectImage("fedChicago", "direct options inflation selloff"),
+  "spx-2007-china-subprime": makeOptionsDirectImage("bearStearns", "direct options China subprime global selloff"),
+  "spx-2007-credit-crunch": makeOptionsDirectImage("bearStearns", "direct options credit crunch"),
+  "spx-2007-bnp-freeze": makeOptionsDirectImage("bearStearns", "direct options BNP Paribas liquidity freeze"),
+  "spx-2007-fed-cut": makeOptionsDirectImage("fedChicago", "direct options Fed cut credit relief"),
+  "spx-2007-record-high": makeOptionsDirectImage("nyseExterior", "direct options 2007 S&P 500 record high"),
+};
+
 const stopWords = new Set([
   "about",
   "after",
@@ -536,7 +624,7 @@ function getFallbackImage(event: HeadlineEvent): HeadlineImageAsset {
 }
 
 export async function fetchHeadlineImage(event: HeadlineEvent, signal?: AbortSignal) {
-  const directImage = directImageOverrides[event.id];
+  const directImage = directImageOverrides[event.id] ?? optionsDirectImageOverrides[event.id];
 
   if (directImage) {
     return {

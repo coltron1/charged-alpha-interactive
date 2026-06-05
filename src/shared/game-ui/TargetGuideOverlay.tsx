@@ -107,7 +107,7 @@ function getDashboardGuideCalloutSize(item: DashboardGuideItem, viewport: { widt
   };
 }
 
-function getGuideCalloutPoint(item: DashboardGuideItem, rect: GuideRect, viewport: { width: number; height: number }) {
+function getGuideCalloutPoint(item: DashboardGuideItem, rect: GuideRect, viewport: { width: number; height: number }, bottomInset: number) {
   const isMobile = viewport.width <= 768;
   const isWideLandscape = viewport.width >= 900 && viewport.width > viewport.height;
   const placement = isMobile ? (item.mobilePlacement ?? item.placement) : isWideLandscape ? (item.widePlacement ?? item.placement) : item.placement;
@@ -129,7 +129,7 @@ function getGuideCalloutPoint(item: DashboardGuideItem, rect: GuideRect, viewpor
 
   return {
     x: clampNumber(x, calloutWidth / 2 + 10, viewport.width - calloutWidth / 2 - 10),
-    y: clampNumber(y, calloutHeight / 2 + 10, viewport.height - calloutHeight / 2 - 66),
+    y: clampNumber(y, calloutHeight / 2 + 10, viewport.height - calloutHeight / 2 - bottomInset),
   };
 }
 
@@ -330,7 +330,7 @@ export function TargetGuideOverlay({
         item,
         rect,
         target: getRectCenter(rect),
-        callout: getGuideCalloutPoint(item, rect, guideLayout.viewport),
+        callout: getGuideCalloutPoint(item, rect, guideLayout.viewport, showStartButton ? 66 : 8),
       };
     })
     .filter(isDashboardGuideCallout);

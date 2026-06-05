@@ -30,6 +30,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trackGameEvent } from "../../shared/analytics/events";
 import { assetUrl } from "../../shared/assets";
 import { educationalDisclaimer } from "../../shared/compliance/copy";
+import { HighScoreToBeatBanner } from "../../shared/game-ui/InvestmentResults";
 import { TargetGuideOverlay } from "../../shared/game-ui/TargetGuideOverlay";
 import { HeadlineEventImage } from "./components/HeadlineEventImage";
 import type { HeadlineEvent } from "./content/events";
@@ -52,6 +53,7 @@ import {
   getDecisionPositions,
   getDefaultCashPercent,
   getFinalRank,
+  calculateBenchmarkFinals,
   getAnnualCashBondYield,
   calculateCashBondReturnBetween,
   getCashBondReturn,
@@ -160,18 +162,25 @@ type LeaderboardRow = {
   submittedAt?: string;
   highlighted?: boolean;
 };
-type ChargedAlphaUser = {
-  authenticated: boolean;
-  email?: string;
-  firstName?: string;
-  loginUrl?: string;
-  name?: string;
-  registerUrl?: string;
-};
+
+const leaderboardNameBlocklist = [
+  "admin",
+  "administrator",
+  "asshole",
+  "bitch",
+  "chargedalpha",
+  "cunt",
+  "dick",
+  "fuck",
+  "hitler",
+  "moderator",
+  "nazi",
+  "shit",
+  "support",
+];
 
 const marketHeatQuietBand = 0.75;
 const timeReelDurationMs = 4000;
-const chargedAlphaGamePath = "/games/front-page-fortune";
 const leaderboardStorageKey = "front-page-fortune-leaderboard-v1";
 const leaderboardGameSlug = "front-page-fortune";
 const leaderboardMaxEntries = 50;
@@ -690,35 +699,37 @@ function saveLeaderboardEntries(entries: LeaderboardEntry[]) {
 }
 
 function sanitizeLeaderboardName(name: string) {
-  return name.trim().replace(/\s+/g, " ").slice(0, 24);
+  return name
+    .replace(/[\x00-\x1f\x7f-\x9f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 24);
 }
 
-function sanitizeLeaderboardEmail(email: string) {
-  return email.trim().toLowerCase().slice(0, 80);
-}
-
-function isValidLeaderboardEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function getChargedAlphaAccountUrl(kind: "login" | "register", user: ChargedAlphaUser | null) {
-  const fallback = `/auth/${kind}?next=${encodeURIComponent(chargedAlphaGamePath)}`;
-  return (kind === "login" ? user?.loginUrl : user?.registerUrl) || fallback;
-}
-
-function getChargedAlphaFirstName(user: ChargedAlphaUser | null) {
-  if (!user?.authenticated) {
-    return "";
+function getLeaderboardNameError(name: string) {
+  const cleaned = sanitizeLeaderboardName(name);
+  const compact = cleaned.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const tokens = cleaned.toLowerCase().match(/[a-z0-9]+/g) ?? ([] as string[]);
+  if (cleaned.length < 2) {
+    return "Enter a display name.";
   }
-  const candidate = user.firstName || user.name?.split(/\s+/)[0] || user.email?.split("@")[0] || "";
-  return sanitizeLeaderboardName(candidate) || "Player";
+  if (/@|https?:|www\./i.test(cleaned)) {
+    return "Use a display name, not an email or link.";
+  }
+  if (!/^[A-Za-z][A-Za-z0-9 .'-]{1,23}$/.test(cleaned)) {
+    return "Names can use letters, numbers, spaces, apostrophes, periods, and hyphens.";
+  }
+  if (leaderboardNameBlocklist.some((word) => compact === word || tokens.includes(word))) {
+    return "Choose a different display name.";
+  }
+  return "";
 }
 
-function createLeaderboardEntry(game: HeadlineMarketState, name: string, email: string): LeaderboardEntry {
+function createLeaderboardEntry(game: HeadlineMarketState, name: string): LeaderboardEntry {
   const taxPaid = game.results.reduce((total, result) => total + result.taxPenalty, 0);
   return {
     createdAt: new Date().toISOString(),
-    email: sanitizeLeaderboardEmail(email),
+    email: "",
     id: `score-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: sanitizeLeaderboardName(name),
     score: Math.round(game.bankroll),
@@ -753,14 +764,6 @@ function addLeaderboardEntry(entry: LeaderboardEntry) {
   return nextEntries;
 }
 
-async function fetchChargedAlphaUser(): Promise<ChargedAlphaUser | null> {
-  const response = await fetch(`/auth/api/me?next=${encodeURIComponent(chargedAlphaGamePath)}`, { credentials: "same-origin" });
-  if (!response.ok) {
-    return null;
-  }
-  return (await response.json()) as ChargedAlphaUser;
-}
-
 async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[] | null> {
   const response = await fetch(`/games/api/leaderboard/${leaderboardGameSlug}`, { credentials: "same-origin" });
   if (!response.ok) {
@@ -773,6 +776,7 @@ async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[] | null> {
 async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<LeaderboardEntry> {
   const response = await fetch("/games/api/scores", {
     body: JSON.stringify({
+      display_name: entry.name,
       game_slug: leaderboardGameSlug,
       metadata: {
         source: "front-page-fortune",
@@ -791,18 +795,10 @@ async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<Leaderboar
   const payload = (await response.json().catch(() => ({}))) as {
     entry?: unknown;
     error?: string;
-    login_url?: string;
-    register_url?: string;
   };
 
   if (!response.ok) {
-    const error = new Error(payload.error || "Score was not accepted.");
-    Object.assign(error, {
-      loginUrl: payload.login_url,
-      registerUrl: payload.register_url,
-      status: response.status,
-    });
-    throw error;
+    throw new Error(payload.error || "Score was not accepted.");
   }
 
   if (!isLeaderboardEntry(payload.entry)) {
@@ -812,6 +808,7 @@ async function postLeaderboardEntry(entry: LeaderboardEntry): Promise<Leaderboar
 }
 
 function getLeaderboardRows(game: HeadlineMarketState, entries: LeaderboardEntry[], previewEntry: LeaderboardEntry | null): LeaderboardRow[] {
+  const benchmarks = calculateBenchmarkFinals(game.timeline);
   const rows: LeaderboardRow[] = [
     {
       id: "eli-benchmark",
@@ -828,6 +825,14 @@ function getLeaderboardRows(game: HeadlineMarketState, entries: LeaderboardEntry
       score: game.sisterBankroll,
       returnPercent: getStartingGain(game.sisterBankroll),
       detail: "Gold jewelry tracked to gold",
+    },
+    {
+      id: "perfect-tape-benchmark",
+      kind: "benchmark",
+      label: "Perfect tape",
+      score: benchmarks.perfectNewspaperTiming,
+      returnPercent: getStartingGain(benchmarks.perfectNewspaperTiming),
+      detail: "Best allocation each jump",
     },
   ];
 
@@ -2169,6 +2174,7 @@ function StorybookStart({
   const defaultGoldAmount = (startingBankroll * game.defaultGoldPercent) / 100;
   const defaultCashAmount = (startingBankroll * defaultCashPercent) / 100;
   const prologueDate = formatDateWithWeekday(game.timeline.inheritanceDate);
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatDateLong(game.timeline.inheritanceDate)} to ${formatDateLong(game.timeline.periodEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
   const isTransitioning = introTransition !== "none";
 
   return (
@@ -2202,6 +2208,11 @@ function StorybookStart({
           <article className="storybook-intro-page rules">
             <h1>How To Play</h1>
             <p className="storybook-howto-goal">Goal: Grow Grandpa's {formatMoney(startingBankroll)} by deciding how markets react to future front pages.</p>
+            <p className="storybook-perfect-question">
+              <Trophy size={16} />
+              <span>{perfectTimingQuestion}</span>
+            </p>
+            <HighScoreToBeatBanner formatMoney={formatMoney} gameSlug="front-page-fortune" />
             <div className="storybook-howto-dashboard-map">
               <figure className="storybook-howto-dashboard-shot wide">
                 <img
@@ -3214,18 +3225,12 @@ function FinalLeaderboardOverlay({
 }) {
   const [entries, setEntries] = useState(() => loadLeaderboardEntries());
   const [playerName, setPlayerName] = useState("");
-  const [email, setEmail] = useState("");
   const [formMessage, setFormMessage] = useState(submittedEntry ? "Score posted to this device." : "");
-  const [chargedAlphaUser, setChargedAlphaUser] = useState<ChargedAlphaUser | null>(null);
   const [serverLeaderboardAvailable, setServerLeaderboardAvailable] = useState(false);
   const [postingScore, setPostingScore] = useState(false);
   const previewEntry = submittedEntry ?? getLeaderboardPreviewEntry(game);
   const rows = getLeaderboardRows(game, entries, previewEntry);
   const previewRank = rows.findIndex((row) => row.id === previewEntry.id || (submittedEntry && row.id === submittedEntry.id)) + 1;
-  const accountFirstName = getChargedAlphaFirstName(chargedAlphaUser);
-  const mustSignInForPublicScore = serverLeaderboardAvailable && !chargedAlphaUser?.authenticated;
-  const loginUrl = getChargedAlphaAccountUrl("login", chargedAlphaUser);
-  const registerUrl = getChargedAlphaAccountUrl("register", chargedAlphaUser);
 
   useEffect(() => {
     let cancelled = false;
@@ -3243,23 +3248,6 @@ function FinalLeaderboardOverlay({
         }
       });
 
-    fetchChargedAlphaUser()
-      .then((user) => {
-        if (!cancelled && user) {
-          setChargedAlphaUser(user);
-          if (user.authenticated) {
-            const firstName = getChargedAlphaFirstName(user);
-            setPlayerName((current) => current || firstName);
-            setEmail((current) => current || user.email || "");
-          }
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setChargedAlphaUser(null);
-        }
-      });
-
     return () => {
       cancelled = true;
     };
@@ -3268,39 +3256,31 @@ function FinalLeaderboardOverlay({
   const submitScore = async (event: ReactFormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanName = sanitizeLeaderboardName(playerName);
-    const cleanEmail = sanitizeLeaderboardEmail(email);
+    const nameError = getLeaderboardNameError(cleanName);
 
     if (submittedEntry) {
       setFormMessage("This run is already posted.");
       return;
     }
-    if (mustSignInForPublicScore) {
-      setFormMessage("Create or sign in to a free Charged Alpha account to post this public score.");
-      return;
-    }
-    if (!chargedAlphaUser?.authenticated && cleanName.length < 2) {
-      setFormMessage("Enter a display name.");
-      return;
-    }
-    if (!serverLeaderboardAvailable && !isValidLeaderboardEmail(cleanEmail)) {
-      setFormMessage("Enter a valid email address.");
+    if (nameError) {
+      setFormMessage(nameError);
       return;
     }
 
-    const entry = createLeaderboardEntry(game, chargedAlphaUser?.authenticated ? accountFirstName : cleanName, cleanEmail);
+    const entry = createLeaderboardEntry(game, cleanName);
     setPostingScore(true);
     try {
-      if (serverLeaderboardAvailable && chargedAlphaUser?.authenticated) {
+      if (serverLeaderboardAvailable) {
         const serverEntry = await postLeaderboardEntry(entry);
         const serverEntries = await fetchLeaderboardEntries();
         setEntries(serverEntries ?? [serverEntry, ...entries]);
         onSubmitted(serverEntry);
-        setFormMessage("Posted to your Charged Alpha account.");
+        setFormMessage("Posted to this week's public board.");
       } else {
         const nextEntries = addLeaderboardEntry(entry);
         setEntries(nextEntries);
         onSubmitted(entry);
-        setFormMessage("Posted on this device. Sign in on Charged Alpha for public scores.");
+        setFormMessage("Posted on this device.");
       }
       trackGameEvent("headline_market_score_submit", {
         score: entry.score,
@@ -3308,14 +3288,14 @@ function FinalLeaderboardOverlay({
         moves: entry.moves,
       });
     } catch (error) {
-      setFormMessage(error instanceof Error ? error.message : "Score posting failed. Try again after signing in.");
+      setFormMessage(error instanceof Error ? error.message : "Score posting failed. Try again.");
     } finally {
       setPostingScore(false);
     }
   };
 
   return (
-    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label="Front Page Fortune high scores">
+    <div className="storybook-overlay leaderboard-overlay" role="dialog" aria-modal="true" aria-label="Front Page Fortune leaderboard">
       <section className="storybook-leaderboard-page">
         <button className="storybook-minimize" type="button" onClick={onClose} aria-label="Close high scores">
           <Minimize2 size={16} />
@@ -3323,8 +3303,8 @@ function FinalLeaderboardOverlay({
         </button>
         <header className="storybook-leaderboard-head">
           <p className="eyebrow">Front Page Fortune</p>
-          <h2>High Scores</h2>
-          <span>Your run ranks #{Math.max(1, previewRank)} against saved players and family benchmarks.</span>
+          <h2>Post Your Score</h2>
+          <span>Your run ranks #{Math.max(1, previewRank)} against this week's players and family benchmarks.</span>
         </header>
 
         <section className="storybook-leaderboard-submit" aria-label="Post your score">
@@ -3334,70 +3314,29 @@ function FinalLeaderboardOverlay({
             <em>{formatPercent(getStartingGain(game.bankroll))} over 20 years</em>
           </div>
           <form
-            className={`${chargedAlphaUser?.authenticated ? "account-ready" : ""} ${mustSignInForPublicScore ? "account-required" : ""}`}
             onSubmit={submitScore}
           >
-            {chargedAlphaUser?.authenticated ? (
-              <div className="storybook-leaderboard-account-card">
-                <span>Posting as</span>
-                <strong>{accountFirstName}</strong>
-                <em>{chargedAlphaUser.email}</em>
-              </div>
-            ) : mustSignInForPublicScore ? (
-              <div className="storybook-leaderboard-auth-card">
-                <span>Free account required</span>
-                <strong>Save this run publicly</strong>
-                <em>Use your Charged Alpha account to post scores and keep game progress.</em>
-                <div>
-                  <a className="primary-action legacy-primary" href={registerUrl}>
-                    Create Account
-                  </a>
-                  <a className="secondary-action compact" href={loginUrl}>
-                    Sign In
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <>
-                <label>
-                  <span>Name</span>
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    value={playerName}
-                    onChange={(event) => setPlayerName(event.target.value)}
-                    placeholder="Your name"
-                    disabled={Boolean(submittedEntry)}
-                    maxLength={24}
-                  />
-                </label>
-                <label>
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    disabled={Boolean(submittedEntry)}
-                    maxLength={80}
-                  />
-                </label>
-              </>
-            )}
-            {!mustSignInForPublicScore && (
-              <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry) || postingScore}>
-                <Send size={16} />
-                {submittedEntry ? "Score Posted" : postingScore ? "Posting..." : "Post Score"}
-              </button>
-            )}
+            <label>
+              <span>Name</span>
+              <input
+                type="text"
+                autoComplete="name"
+                value={playerName}
+                onChange={(event) => setPlayerName(event.target.value)}
+                placeholder="Your name"
+                disabled={Boolean(submittedEntry)}
+                maxLength={24}
+              />
+            </label>
+            <button className="primary-action legacy-primary" type="submit" disabled={Boolean(submittedEntry) || postingScore}>
+              <Send size={16} />
+              {submittedEntry ? "Score Posted" : postingScore ? "Posting..." : "Post Score"}
+            </button>
           </form>
           <p>
             {formMessage ||
               (serverLeaderboardAvailable
-                ? chargedAlphaUser?.authenticated
-                  ? "Public scores use your Charged Alpha first name."
-                  : "Create or sign in to post this score publicly."
+                ? "No login needed. Clean display names only; the board starts fresh weekly."
                 : "Standalone scores are stored on this device.")}
           </p>
         </section>
@@ -3431,6 +3370,8 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
   const performancePoints = getFinalPerformancePoints(game);
   const profitableMoves = game.results.filter((result) => result.profit >= 0).length;
   const reallocatedMoves = game.results.filter((result) => result.isReallocation).length;
+  const benchmarks = calculateBenchmarkFinals(game.timeline);
+  const perfectTimingGain = (benchmarks.perfectNewspaperTiming / startingBankroll - 1) * 100;
 
   return (
     <main className="app-shell legacy-shell storybook-shell final">
@@ -3463,6 +3404,14 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
               <em>{formatPercent(sisterGain)} tracked to gold</em>
               <small className={game.bankroll >= game.sisterBankroll ? "positive" : "negative"}>
                 {getPlayerStrategyGap(game.bankroll, game.sisterBankroll, "Ruth")}
+              </small>
+            </article>
+            <article>
+              <span>Perfect tape</span>
+              <strong>{formatMoney(benchmarks.perfectNewspaperTiming)}</strong>
+              <em>{formatPercent(perfectTimingGain)} best allocation each jump</em>
+              <small className={game.bankroll >= benchmarks.perfectNewspaperTiming ? "positive" : "negative"}>
+                {getPlayerStrategyGap(game.bankroll, benchmarks.perfectNewspaperTiming, "Perfect tape")}
               </small>
             </article>
           </div>
@@ -3498,8 +3447,12 @@ function FinalScreen({ game, onRestart }: { game: HeadlineMarketState; onRestart
           </button>
           <button className="secondary-action" type="button" onClick={() => setLeaderboardOpen(true)}>
             <Trophy size={18} />
-            High Scores
+            Post Your Score and See How You Rank
           </button>
+          <a className="primary-action legacy-primary" href="/games/harvest-ledger">
+            Play Next: Harvest Ledger
+            <ChevronRight size={18} />
+          </a>
           <button className="secondary-action" type="button" onClick={onRestart}>
             <RotateCcw size={18} />
             Play It Again

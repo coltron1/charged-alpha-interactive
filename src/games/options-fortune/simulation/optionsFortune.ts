@@ -1,4 +1,4 @@
-import { headlineMarketTimeline, type HeadlineEvent } from "../../headline-market/content/events";
+import type { HeadlineEvent } from "../../headline-market/content/events";
 import { bondYieldByMonth, sp500DailySeries } from "../../headline-market/content/marketHistory";
 import {
   calculateCashBondReturnBetween,
@@ -10,6 +10,15 @@ import {
 import { optionsHeadlineEvents } from "../content/optionsHeadlines";
 
 export type OptionChoice = "bills" | "calls" | "puts" | "straddle";
+
+export type OptionsEarlyClose = {
+  accountAfterClose: number;
+  billReturnAfterClose: number;
+  closeTax: number;
+  date: string;
+  progress: number;
+  sp500: number;
+};
 
 export interface OptionsTarget {
   index: number;
@@ -32,6 +41,11 @@ export interface OptionOutcome {
   premiumRate: number;
   riskFreeRate: number;
   volatility: number;
+  volatilitySource: "cboe-vix-close" | "trailing-realized";
+  vixClose: number | null;
+  pricedInMove: number;
+  contractCount: number;
+  premiumPerContract: number;
   optionBudgetRate: number;
   optionBudget: number;
   collateral: number;
@@ -39,6 +53,7 @@ export interface OptionOutcome {
   breakEvenMove: number;
   notional: number;
   expiredWorthless: boolean;
+  earlyClose?: OptionsEarlyClose;
 }
 
 export interface OptionsResult extends OptionOutcome {
@@ -64,29 +79,31 @@ export const optionsTitle = "Expiration Date";
 export { startingBankroll };
 
 export const optionsStartDate = "1997-10-27";
-export const optionsEndDate = "2007-10-26";
-export const optionTaxRate = 0.15;
+export const optionsEndDate = "2004-10-27";
+const marketVisionUnlockYears = 5;
+export const optionContractMultiplier = 100;
+export const optionTaxRate = 0.22;
 export const optionChoiceOrder: OptionChoice[] = ["bills", "calls", "puts", "straddle"];
 
 export const optionChoiceLabels: Record<OptionChoice, string> = {
-  bills: "Treasury Bills",
-  calls: "Buy Calls",
-  puts: "Buy Puts",
-  straddle: "Buy Straddle",
+  bills: "T-Bills",
+  calls: "Call Option",
+  puts: "Put Option",
+  straddle: "Straddle",
 };
 
 export const optionChoiceShortLabels: Record<OptionChoice, string> = {
-  bills: "Bills",
-  calls: "Calls",
-  puts: "Puts",
+  bills: "Cash",
+  calls: "Call",
+  puts: "Put",
   straddle: "Straddle",
 };
 
 export const optionChoiceDescriptions: Record<OptionChoice, string> = {
   bills: "100% Treasury bills. Slow, steady, and no premium at risk.",
-  calls: "35% buys S&P 500 calls. The rest waits in bills.",
-  puts: "35% buys S&P 500 puts. The rest waits in bills.",
-  straddle: "45% buys calls and puts together. The rest waits in bills.",
+  calls: "Cash buys as many whole S&P 500 call contracts as it can. Leftover cash waits in bills.",
+  puts: "Cash buys as many whole S&P 500 put contracts as it can. Leftover cash waits in bills.",
+  straddle: "Cash buys as many whole straddles as it can. Leftover cash waits in bills.",
 };
 
 export const optionChoiceLessons: Record<OptionChoice, string> = {
@@ -96,7 +113,46 @@ export const optionChoiceLessons: Record<OptionChoice, string> = {
   straddle: "Straddles teach volatility: direction matters less, but the move must be large enough to pay for two premiums.",
 };
 
-const optionEvents = optionsHeadlineEvents;
+const optionEvents = optionsHeadlineEvents.filter((event) => event.date <= optionsEndDate);
+const dayMilliseconds = 24 * 60 * 60 * 1000;
+
+function dateToUtcTime(date: string) {
+  return new Date(`${date}T00:00:00Z`).getTime();
+}
+
+function formatDateIso(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getSp500CloseOnOrAfter(date: string) {
+  return sp500DailySeries.find((entry) => entry.date >= date)?.value ?? sp500DailySeries.at(-1)?.value ?? 0;
+}
+
+export const historicalVixCloseByDate: Record<string, number> = {
+  "1997-10-27": 31.12,
+  "1998-02-02": 21.36,
+  "1998-08-31": 44.28,
+  "1998-10-15": 33.34,
+  "1999-03-29": 23.54,
+  "2000-03-24": 23.31,
+  "2000-04-14": 33.49,
+  "2001-01-03": 26.6,
+  "2001-09-17": 41.76,
+  "2001-12-03": 25.77,
+  "2002-06-26": 28.42,
+  "2002-07-24": 39.86,
+  "2002-10-09": 42.13,
+  "2003-03-12": 33.51,
+  "2003-05-27": 19.99,
+  "2004-06-30": 14.34,
+  "2005-08-29": 13.52,
+  "2006-06-13": 23.81,
+  "2007-02-27": 18.31,
+  "2007-07-26": 20.74,
+  "2007-08-09": 26.48,
+  "2007-09-18": 20.35,
+  "2007-10-09": 16.12,
+};
 
 function getBoundedIndex(index: number, events = optionEvents) {
   return Math.max(0, Math.min(index, events.length));
@@ -107,7 +163,7 @@ export function createOptionsFortune(): OptionsFortuneState {
     phase: "intro",
     currentIndex: 0,
     selectedTargetIndex: Math.min(1, optionEvents.length),
-    choice: "bills",
+    choice: "calls",
     bankroll: startingBankroll,
     events: optionEvents,
     results: [],
@@ -137,7 +193,7 @@ export function getOptionsTarget(state: Pick<OptionsFortuneState, "events">, tar
       index,
       date: optionsEndDate,
       label: "Final Expiration",
-      sp500: headlineMarketTimeline.finalClose,
+      sp500: getSp500CloseOnOrAfter(optionsEndDate),
       isFinal: true,
     };
   }
@@ -180,9 +236,7 @@ export function setOptionsChoice(state: OptionsFortuneState, choice: OptionChoic
 }
 
 export function getDaysBetween(startDate: string, endDate: string) {
-  const start = new Date(`${startDate}T00:00:00Z`).getTime();
-  const end = new Date(`${endDate}T00:00:00Z`).getTime();
-  return Math.max(1, Math.round((end - start) / (24 * 60 * 60 * 1000)));
+  return Math.max(1, Math.round((dateToUtcTime(endDate) - dateToUtcTime(startDate)) / dayMilliseconds));
 }
 
 function clampNumber(value: number, minimum: number, maximum: number) {
@@ -230,6 +284,37 @@ function getTrailingRealizedVolatility(date: string, lookbackDays = 126) {
   return clampNumber(Math.sqrt(variance) * Math.sqrt(252), 0.08, 0.8);
 }
 
+export function getHistoricalVixClose(date: string) {
+  const exact = historicalVixCloseByDate[date];
+  if (Number.isFinite(exact)) {
+    return exact;
+  }
+
+  const previousDate = Object.keys(historicalVixCloseByDate)
+    .filter((entryDate) => entryDate <= date)
+    .sort()
+    .at(-1);
+
+  return previousDate ? historicalVixCloseByDate[previousDate] : null;
+}
+
+export function getOptionVolatilitySnapshot(date: string) {
+  const vixClose = getHistoricalVixClose(date);
+  if (vixClose && vixClose > 0) {
+    return {
+      source: "cboe-vix-close" as const,
+      vixClose,
+      volatility: clampNumber(vixClose / 100, 0.08, 0.8),
+    };
+  }
+
+  return {
+    source: "trailing-realized" as const,
+    vixClose: null,
+    volatility: getTrailingRealizedVolatility(date),
+  };
+}
+
 function getBlackScholesPremiumRate({
   optionType,
   riskFreeRate,
@@ -264,7 +349,7 @@ export function estimatePremiumRate(event: HeadlineEvent, target: OptionsTarget,
   }
   const termYears = getDaysBetween(event.date, target.date) / 365;
   const riskFreeRate = getHistoricalRiskFreeRate(event.date);
-  const volatility = getTrailingRealizedVolatility(event.date);
+  const { volatility } = getOptionVolatilitySnapshot(event.date);
   const spot = event.startClose;
   const strike = spot;
   const callPremiumRate = getBlackScholesPremiumRate({
@@ -293,25 +378,107 @@ export function estimatePremiumRate(event: HeadlineEvent, target: OptionsTarget,
   return callPremiumRate;
 }
 
-export function getOptionBudgetRate(choice: OptionChoice) {
-  if (choice === "calls" || choice === "puts") {
-    return 0.35;
+function getOptionContractOrder(bankroll: number, event: HeadlineEvent, choice: OptionChoice, premiumRate: number) {
+  if (choice === "bills" || premiumRate <= 0 || bankroll <= 0) {
+    return {
+      collateral: bankroll,
+      contractCount: 0,
+      notional: 0,
+      optionBudget: 0,
+      optionBudgetRate: 0,
+      premiumPerContract: 0,
+    };
   }
-  if (choice === "straddle") {
-    return 0.45;
-  }
-  return 0;
+
+  const premiumPerContract = premiumRate * event.startClose * optionContractMultiplier;
+  const contractCount = premiumPerContract > 0 ? Math.floor(bankroll / premiumPerContract) : 0;
+  const optionBudget = contractCount * premiumPerContract;
+  const collateral = Math.max(0, bankroll - optionBudget);
+
+  return {
+    collateral,
+    contractCount,
+    notional: contractCount * event.startClose * optionContractMultiplier,
+    optionBudget,
+    optionBudgetRate: bankroll > 0 ? optionBudget / bankroll : 0,
+    premiumPerContract,
+  };
 }
 
-function calculatePayoff(choice: OptionChoice, optionBudget: number, premiumRate: number, underlyingReturn: number) {
-  if (choice === "bills" || optionBudget <= 0 || premiumRate <= 0) {
+function calculatePayoff(choice: OptionChoice, contractCount: number, spot: number, underlyingReturn: number) {
+  if (choice === "bills" || contractCount <= 0) {
     return 0;
   }
 
   const move = underlyingReturn / 100;
   const winningMove =
     choice === "calls" ? Math.max(0, move) : choice === "puts" ? Math.max(0, -move) : Math.abs(move);
-  return optionBudget * (winningMove / premiumRate);
+  return contractCount * spot * optionContractMultiplier * winningMove;
+}
+
+function calculateOptionOutcomeForPrice({
+  bankroll,
+  billReturn,
+  choice,
+  earlyClose,
+  event,
+  target,
+  tax,
+  underlyingReturn,
+}: {
+  bankroll: number;
+  billReturn: number;
+  choice: OptionChoice;
+  earlyClose?: OptionsEarlyClose;
+  event: HeadlineEvent;
+  target: OptionsTarget;
+  tax?: number;
+  underlyingReturn: number;
+}): OptionOutcome {
+  const premiumRate = estimatePremiumRate(event, target, choice);
+  const { collateral, contractCount, notional, optionBudget, optionBudgetRate, premiumPerContract } = getOptionContractOrder(
+    bankroll,
+    event,
+    choice,
+    premiumRate,
+  );
+  const riskFreeRate = getHistoricalRiskFreeRate(event.date);
+  const volatilitySnapshot = getOptionVolatilitySnapshot(event.date);
+  const volatility = volatilitySnapshot.volatility;
+  const pricedInMove = volatility * Math.sqrt(getDaysBetween(event.date, target.date) / 365) * 100;
+  const payoff = calculatePayoff(choice, contractCount, event.startClose, underlyingReturn);
+  const collateralEnding = collateral * (1 + billReturn / 100);
+  const grossEndingBankroll = choice === "bills" ? bankroll * (1 + billReturn / 100) : collateralEnding + payoff;
+  const taxableProfit = choice === "bills" ? 0 : grossEndingBankroll - bankroll;
+  const calculatedTax = tax ?? (taxableProfit > 0 ? taxableProfit * optionTaxRate : 0);
+  const endingBankroll = grossEndingBankroll - calculatedTax;
+
+  return {
+    choice,
+    startingBankroll: bankroll,
+    grossEndingBankroll,
+    endingBankroll,
+    profit: endingBankroll - bankroll,
+    tax: calculatedTax,
+    underlyingReturn,
+    billReturn,
+    premiumRate,
+    riskFreeRate,
+    volatility,
+    volatilitySource: volatilitySnapshot.source,
+    vixClose: volatilitySnapshot.vixClose,
+    pricedInMove,
+    contractCount,
+    premiumPerContract,
+    optionBudgetRate,
+    optionBudget,
+    collateral,
+    payoff,
+    breakEvenMove: premiumRate * 100,
+    notional,
+    expiredWorthless: choice !== "bills" && payoff <= 0,
+    earlyClose,
+  };
 }
 
 export function calculateOptionOutcome(
@@ -320,47 +487,97 @@ export function calculateOptionOutcome(
   target: OptionsTarget,
   choice: OptionChoice,
 ): OptionOutcome {
-  const underlyingReturn = (target.sp500 / event.startClose - 1) * 100;
-  const billReturn = calculateCashBondReturnBetween(event.date, target.date);
-  const optionBudgetRate = getOptionBudgetRate(choice);
-  const optionBudget = bankroll * optionBudgetRate;
-  const collateral = bankroll - optionBudget;
-  const premiumRate = estimatePremiumRate(event, target, choice);
-  const riskFreeRate = getHistoricalRiskFreeRate(event.date);
-  const volatility = getTrailingRealizedVolatility(event.date);
-  const payoff = calculatePayoff(choice, optionBudget, premiumRate, underlyingReturn);
-  const collateralEnding = collateral * (1 + billReturn / 100);
-  const grossEndingBankroll = choice === "bills" ? bankroll * (1 + billReturn / 100) : collateralEnding + payoff;
-  const grossProfit = grossEndingBankroll - bankroll;
-  const tax = grossProfit > 0 ? grossProfit * optionTaxRate : 0;
-  const endingBankroll = grossEndingBankroll - tax;
+  return calculateOptionOutcomeForPrice({
+    bankroll,
+    billReturn: calculateCashBondReturnBetween(event.date, target.date),
+    choice,
+    event,
+    target,
+    underlyingReturn: (target.sp500 / event.startClose - 1) * 100,
+  });
+}
+
+export function calculateEarlyCloseOptionOutcome({
+  bankroll,
+  choice,
+  closeDate,
+  closeProgress,
+  closeSp500,
+  event,
+  target,
+}: {
+  bankroll: number;
+  choice: OptionChoice;
+  closeDate: string;
+  closeProgress: number;
+  closeSp500: number;
+  event: HeadlineEvent;
+  target: OptionsTarget;
+}): OptionOutcome {
+  if (choice === "bills") {
+    return calculateOptionOutcome(bankroll, event, target, choice);
+  }
+
+  const closeUnderlyingReturn = (closeSp500 / event.startClose - 1) * 100;
+  const billReturnToClose = calculateCashBondReturnBetween(event.date, closeDate);
+  const closeOutcome = calculateOptionOutcomeForPrice({
+    bankroll,
+    billReturn: billReturnToClose,
+    choice,
+    event,
+    target,
+    tax: 0,
+    underlyingReturn: closeUnderlyingReturn,
+  });
+  const closeGrossProfit = closeOutcome.grossEndingBankroll - bankroll;
+  const closeTax = closeGrossProfit > 0 ? closeGrossProfit * optionTaxRate : 0;
+  const accountAfterClose = closeOutcome.grossEndingBankroll - closeTax;
+  const billReturnAfterClose = calculateCashBondReturnBetween(closeDate, target.date);
+  const grossEndingBankroll = accountAfterClose * (1 + billReturnAfterClose / 100);
 
   return {
-    choice,
-    startingBankroll: bankroll,
+    ...closeOutcome,
+    billReturn: billReturnToClose + billReturnAfterClose,
+    earlyClose: {
+      accountAfterClose,
+      billReturnAfterClose,
+      closeTax,
+      date: closeDate,
+      progress: closeProgress,
+      sp500: closeSp500,
+    },
+    endingBankroll: grossEndingBankroll,
     grossEndingBankroll,
-    endingBankroll,
-    profit: endingBankroll - bankroll,
-    tax,
-    underlyingReturn,
-    billReturn,
-    premiumRate,
-    riskFreeRate,
-    volatility,
-    optionBudgetRate,
-    optionBudget,
-    collateral,
-    payoff,
-    breakEvenMove: premiumRate * 100,
-    notional: premiumRate > 0 ? optionBudget / premiumRate : 0,
-    expiredWorthless: choice !== "bills" && payoff <= 0,
+    profit: grossEndingBankroll - bankroll,
+    tax: closeTax,
   };
 }
 
-function getBestChoiceForWindow(bankroll: number, event: HeadlineEvent, target: OptionsTarget) {
-  return optionChoiceOrder
-    .map((choice) => calculateOptionOutcome(bankroll, event, target, choice))
-    .sort((a, b) => b.endingBankroll - a.endingBankroll)[0];
+function getBestTimedChoiceForWindow(bankroll: number, event: HeadlineEvent, target: OptionsTarget) {
+  const startTime = new Date(`${event.date}T00:00:00Z`).getTime();
+  const endTime = new Date(`${target.date}T00:00:00Z`).getTime();
+  const duration = Math.max(1, endTime - startTime);
+  const expirationOutcomes = optionChoiceOrder.map((choice) => calculateOptionOutcome(bankroll, event, target, choice));
+  const timedOutcomes = optionChoiceOrder
+    .filter((choice) => choice !== "bills")
+    .flatMap((choice) =>
+      sp500DailySeries
+        .filter((entry) => entry.date > event.date && entry.date < target.date)
+        .map((entry) => {
+          const closeTime = new Date(`${entry.date}T00:00:00Z`).getTime();
+          return calculateEarlyCloseOptionOutcome({
+            bankroll,
+            choice,
+            closeDate: entry.date,
+            closeProgress: Math.max(0, Math.min(1, (closeTime - startTime) / duration)),
+            closeSp500: entry.value,
+            event,
+            target,
+          });
+        }),
+    );
+
+  return [...expirationOutcomes, ...timedOutcomes].sort((a, b) => b.endingBankroll - a.endingBankroll)[0];
 }
 
 export function getProjectedOutcomes(state: OptionsFortuneState) {
@@ -389,7 +606,7 @@ export function playOptionsRound(state: OptionsFortuneState): OptionsFortuneStat
   const stockReturn = (target.sp500 / event.startClose - 1) * 100;
   const indexBenchmark = state.indexBenchmark * (1 + stockReturn / 100);
   const billsBenchmark = state.billsBenchmark * (1 + outcome.billReturn / 100);
-  const perfectTape = getBestChoiceForWindow(state.perfectTape, event, target).endingBankroll;
+  const perfectTape = getBestTimedChoiceForWindow(state.perfectTape, event, target).endingBankroll;
 
   return {
     ...state,
@@ -404,12 +621,74 @@ export function playOptionsRound(state: OptionsFortuneState): OptionsFortuneStat
   };
 }
 
+export function closeLatestOptionsResult(
+  state: OptionsFortuneState,
+  closeDate: string,
+  closeSp500: number,
+  closeProgress: number,
+): OptionsFortuneState {
+  const result = state.results.at(-1);
+  if (!result || result.earlyClose || result.choice === "bills") {
+    return state;
+  }
+
+  const earlyOutcome = calculateEarlyCloseOptionOutcome({
+    bankroll: result.startingBankroll,
+    choice: result.choice,
+    closeDate,
+    closeProgress,
+    closeSp500,
+    event: result.event,
+    target: result.target,
+  });
+  const earlyResult: OptionsResult = {
+    ...earlyOutcome,
+    event: result.event,
+    target: result.target,
+    targetIndex: result.targetIndex,
+  };
+
+  return {
+    ...state,
+    bankroll: earlyResult.endingBankroll,
+    perfectTape: Math.max(state.perfectTape, earlyResult.endingBankroll),
+    results: [...state.results.slice(0, -1), earlyResult],
+  };
+}
+
 export function getProgressPercent(state: OptionsFortuneState, index = state.currentIndex) {
-  return state.events.length > 0 ? (Math.min(index, state.events.length) / state.events.length) * 100 : 0;
+  return getOptionsTimelineProgressPercent(getOptionsTarget(state, index).date);
+}
+
+export function getOptionsTimelineProgressPercent(date: string) {
+  const start = dateToUtcTime(optionsStartDate);
+  const end = dateToUtcTime(optionsEndDate);
+  const current = dateToUtcTime(date);
+
+  if (end <= start) {
+    return 0;
+  }
+
+  return clampNumber(((current - start) / (end - start)) * 100, 0, 100);
+}
+
+export function getVolatilityLensUnlockDate() {
+  const unlockDate = new Date(`${optionsStartDate}T00:00:00Z`);
+  unlockDate.setUTCFullYear(unlockDate.getUTCFullYear() + marketVisionUnlockYears);
+  const unlockDateIso = formatDateIso(unlockDate);
+  return dateToUtcTime(unlockDateIso) > dateToUtcTime(optionsEndDate) ? optionsEndDate : unlockDateIso;
+}
+
+export function getVolatilityLensUnlockProgress() {
+  return getOptionsTimelineProgressPercent(getVolatilityLensUnlockDate());
+}
+
+export function isVolatilityLensUnlockedForDate(date: string) {
+  return dateToUtcTime(date) >= dateToUtcTime(getVolatilityLensUnlockDate());
 }
 
 export function isVolatilityLensUnlocked(state: OptionsFortuneState) {
-  return state.currentIndex >= Math.floor(state.events.length / 2);
+  return isVolatilityLensUnlockedForDate(getOptionsTarget(state, state.currentIndex).date);
 }
 
 export function formatOptionsMoney(value: number) {

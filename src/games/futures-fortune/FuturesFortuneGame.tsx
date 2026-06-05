@@ -26,6 +26,7 @@ import type {
 } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  HighScoreToBeatBanner,
   InvestmentLeaderboardOverlay,
   ResultsMoveImpactChart,
   ResultsPerformanceChart,
@@ -1046,6 +1047,8 @@ function FuturesIntro({
   game: FuturesFortuneState;
   onBegin: () => void;
 }) {
+  const perfectTimingQuestion = `How much do you think someone using this investment strategy from ${formatDateLong(futuresStartDate)} to ${formatDateLong(futuresEndDate)} could have made if they timed the market perfectly? Find out at the end.`;
+
   return (
     <main className="app-shell legacy-shell storybook-shell storybook-intro-shell futures-fortune-shell">
       <section className="storybook-book intro setup futures-intro-book">
@@ -1066,7 +1069,9 @@ function FuturesIntro({
           <div className="storybook-chapter-one-cards">
             <span>{futuresStory.hook}</span>
             <span>Start on Riley's dashboard: choose a future clipping, pick Treasury Bills or one grain future, then let time run.</span>
+            <span>{perfectTimingQuestion}</span>
           </div>
+          <HighScoreToBeatBanner formatMoney={formatFuturesMoney} gameSlug="harvest-ledger" />
           <button className="primary-action legacy-primary storybook-page-turn storybook-prologue-play" type="button" onClick={onBegin}>
             <Play size={18} />
             <span>Start Game</span>
@@ -1509,18 +1514,14 @@ function FuturesSelectedStrategyBanner({
 function FuturesDateConsole({
   compact,
   game,
-  lastResult,
   onChoose,
-  onOpenArticle,
   onOpenIndex,
   onPlay,
   onSelectTarget,
 }: {
   compact: boolean;
   game: FuturesFortuneState;
-  lastResult?: FuturesResult;
   onChoose: (choice: FuturesChoice) => void;
-  onOpenArticle: () => void;
   onOpenIndex: () => void;
   onPlay: () => void;
   onSelectTarget: (targetIndex: number) => void;
@@ -1637,11 +1638,8 @@ function FuturesDateConsole({
             </span>
           </div>
           <FuturesTimeline game={game} onSelectTarget={onSelectTarget} />
-          <div className="futures-inline-preview-wrap">
-            <div className="futures-term-chip" aria-label="Selected futures contract term">
-              {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
-            </div>
-            <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={onOpenArticle} />
+          <div className="futures-term-chip" aria-label="Selected futures contract term">
+            {getFuturesContractTermShortLabel(currentEvent.date, selectedTarget.date)}
           </div>
         </>
       ) : (
@@ -1755,10 +1753,6 @@ function FuturesPreviewCard({
           </div>
         )}
         <p>{getPreviewParagraph(event, target.isFinal)}</p>
-        <div className="futures-preview-contract-note">
-          <strong>Contract terms</strong>
-          <span>{futuresContractRuleSummary}</span>
-        </div>
       </div>
     </article>
   );
@@ -2014,7 +2008,7 @@ function FuturesLessonPopup({
   onClose: () => void;
 }) {
   return (
-    <aside className={`futures-lesson-popup fullscreen ${lesson.tone}`} aria-label="Futures financial math" aria-modal="true" role="dialog">
+    <aside className={`futures-lesson-popup fullscreen ${lesson.tone}`} aria-label="Futures financial math" aria-modal="true" role="dialog" onClick={onClose}>
       <button className="futures-lesson-close" type="button" onClick={onClose} aria-label="Continue to the next headline">
         <X size={14} />
         <span>Continue</span>
@@ -2023,6 +2017,7 @@ function FuturesLessonPopup({
         <header className="futures-lesson-header">
           <span>{lesson.title}</span>
           <strong>{lesson.formula}</strong>
+          <small>Click anywhere to close and continue.</small>
         </header>
 
         <FuturesTransactionVisual result={result} />
@@ -2180,8 +2175,12 @@ function FuturesFinalScreen({ game, onRestart }: { game: FuturesFortuneState; on
           </button>
           <button className="secondary-action" type="button" onClick={() => setLeaderboardOpen(true)}>
             <Trophy size={18} />
-            High Scores
+            Post Your Score and See How You Rank
           </button>
+          <a className="primary-action legacy-primary" href="/games/sector-oracle">
+            Play Next: Sector Oracle
+            <ChevronRight size={18} />
+          </a>
           <button className="secondary-action" type="button" onClick={onRestart}>
             <RotateCcw size={18} />
             Play It Again
@@ -2374,13 +2373,12 @@ export function FuturesFortuneGame() {
         </header>
 
         <div className="storybook-one-screen dashboard-clean futures-one-screen">
+          {compactDashboard && <FuturesPreviewCard target={selectedTarget} lastResult={lastResult} onOpen={() => setOverlay("article")} />}
           <FuturesDateConsole
             compact={compactDashboard}
             game={game}
-            lastResult={lastResult}
             onChoose={(choice) => setGame((current) => setFuturesChoice(current, choice))}
             onOpenIndex={() => setOverlay("index")}
-            onOpenArticle={() => setOverlay("article")}
             onPlay={play}
             onSelectTarget={(targetIndex) => setGame((current) => setFuturesTargetIndex(current, targetIndex))}
           />
