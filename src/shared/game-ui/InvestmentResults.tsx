@@ -389,7 +389,7 @@ export function HighScoreToBeatBanner({
   }
 
   return (
-    <aside className="storybook-high-score-banner" aria-label="Current high score to beat">
+    <aside className="storybook-high-score-banner" aria-label="Current high score to beat" data-deploy-marker="game-dashboard-polish-v2">
       <Trophy size={17} aria-hidden="true" />
       <span>Current score to beat</span>
       <strong>{formatMoney(scoreToBeat.score)}</strong>
